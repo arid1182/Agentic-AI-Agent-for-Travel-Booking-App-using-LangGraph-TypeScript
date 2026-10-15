@@ -100,11 +100,9 @@ https://fly-away-lime.vercel.app/
 
 # Zustand Store Structure
 
-The project uses Zustand for lightweight global state management.
-
-useFlightStore
-
-Handles the flight booking flow.
+- The project uses Zustand for lightweight global state management.
+- useFlightStore
+- Handles the flight booking flow.
 
 ## Stores:
 
@@ -123,15 +121,10 @@ Handles the flight booking flow.
 
 ## Sensitive fields such as:
 
-passport number
-are excluded from local storage using:
+- passport number are excluded from local storage using:
+partialize() to avoid persisting private user data.
 
-partialize()
-
-to avoid persisting private user data.
-
-useUserStore
-
+- useUserStore
 Handles authenticated user state.
 
 ## Stores:
@@ -140,11 +133,9 @@ Handles authenticated user state.
 - Cached booking data
 - Persistence:
 
-Only session-related information is persisted.
-
-Large or sensitive user data is intentionally excluded.
-
-Store Reset Actions
+- Only session-related information is persisted.
+- Large or sensitive user data is intentionally excluded.
+- Store Reset Actions
 
 ## Automatic reset actions are triggered on:
 
