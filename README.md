@@ -34,7 +34,7 @@ https://fly-away-lime.vercel.app/
 
 ## Run Locally:
 
-- git clone https://github.com/srijangdas/FlyAway.git
+- git clone https://github.com/arid1182/Agentic-AI-Agent-for-Travel-Booking-App-using-LangGraph-TypeScript.git
 - cd fly-away
 - npm i
 
