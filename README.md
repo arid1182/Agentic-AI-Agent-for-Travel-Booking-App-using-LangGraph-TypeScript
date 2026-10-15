@@ -12,46 +12,46 @@ The application enables users to search flights, select seats with live updates,
 https://fly-away-lime.vercel.app/
 
 **Test Credentials:**
-email: admin@test.com
-password:123456
+- email: admin@test.com
+- password:123456
 
 ## Tech Stack
 
 **Frontend**
-Next.js 15 (App Router)
-React
-TypeScript
-Tailwind CSS
-Zustand (Persist Middleware)
+- Next.js 15 (App Router)
+- React
+- TypeScript
+- Tailwind CSS
+- Zustand (Persist Middleware)
 
 **Backend / Database**
-Supabase
-Authentication
-PostgreSQL Database
-Realtime subscriptions
-Row Level Security (RLS)
-RPC Functions
+- Supabase
+- Authentication
+- PostgreSQL Database
+- Realtime subscriptions
+- Row Level Security (RLS)
+- RPC Functions
 
 ## Run Locally:
 
-git clone https://github.com/srijangdas/FlyAway.git
-cd fly-away
-npm i
+- git clone https://github.com/srijangdas/FlyAway.git
+- cd fly-away
+- npm i
 
 (Edit .envexample.local with your supabase keys and rename to .env.local)
 
 ## Congig Supabase:
 
-npx supabase init
-npx supabase login
-npx supabase link --project-ref your-project-reference-id
-npx supabase db query --linked < supabase/seed.sql
+- npx supabase init
+- npx supabase login
+- npx supabase link --project-ref your-project-reference-id
+- npx supabase db query --linked < supabase/seed.sql
 
 ## Run Project:
 
-npm run dev
-npm run build
-npm start
+- npm run dev
+- npm run build
+- npm start
 
 # Features Implemented
 
@@ -108,18 +108,18 @@ Handles the flight booking flow.
 
 ## Stores:
 
-Active search query
-Selected flight
-Selected seat(s)
-Current booking step
-Passenger form data
-Persistence:
+- Active search query
+- Selected flight
+- Selected seat(s)
+- Current booking step
+- Passenger form data
+- Persistence:
 
 ## Uses Zustand Persist middleware to:
 
-Resume booking after refresh
-Restore in-progress booking state
-Security:
+- Resume booking after refresh
+- Restore in-progress booking state
+- Security:
 
 ## Sensitive fields such as:
 
@@ -136,9 +136,9 @@ Handles authenticated user state.
 
 ## Stores:
 
-Supabase session token
-Cached booking data
-Persistence:
+- Supabase session token
+- Cached booking data
+- Persistence:
 
 Only session-related information is persisted.
 
@@ -148,7 +148,7 @@ Store Reset Actions
 
 ## Automatic reset actions are triggered on:
 
-User logout
-Booking cancellation
+- User logout
+- Booking cancellation
 
 to avoid stale booking data and maintain clean application state.
