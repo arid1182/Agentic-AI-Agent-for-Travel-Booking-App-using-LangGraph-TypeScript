@@ -47,4 +47,15 @@ export const airports = [
       "Sardar Vallabhbhai Patel",
     code: "AMD",
   },
+
+  {
+  city: "London",
+  airport: "Heathrow Airport",
+  code: "LHR",
+},
+{
+  city: "New York",
+  airport: "John F. Kennedy International",
+  code: "JFK",
+},
 ];

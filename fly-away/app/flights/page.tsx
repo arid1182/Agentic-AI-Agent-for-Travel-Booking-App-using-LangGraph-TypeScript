@@ -1,3 +1,5 @@
+
+import DuffelResults from "@/components/flight/duffel-results";
 import Navbar from "@/components/layout/navbar";
 import FlightSearch from "@/components/flight/flight-search";
 import FlightCard from "@/components/flight/flight-card";
@@ -9,38 +11,105 @@ function getMinDepartureTime() {
   return new Date(thirtyMinutesFromNow).toISOString();
 }
 
-export default async function FlightsPage({
-  searchParams,
-}: {
+type FlightsPageProps = {
   searchParams: Promise<{
     from?: string;
     to?: string;
     date?: string;
+    passengers?: string;
+    class?: string;
+    source?: string;
   }>;
-}) {
+};
+
+const allowedCabinClasses = [
+  "economy",
+  "premium_economy",
+  "business",
+  "first",
+] as const;
+
+export default async function FlightsPage({
+  searchParams,
+}: FlightsPageProps) {
   const params = await searchParams;
 
+  // DUFFEL SEARCH: Do not query Supabase for external offers.
+  if (params.source === "duffel") {
+    const parsedPassengers = Number(params.passengers ?? "1");
+
+    const validPassengers =
+      Number.isInteger(parsedPassengers) &&
+      parsedPassengers >= 1 &&
+      parsedPassengers <= 9;
+
+    const requestedClass = params.class ?? "economy";
+
+    const cabinClass = allowedCabinClasses.includes(
+      requestedClass as (typeof allowedCabinClasses)[number],
+    )
+      ? requestedClass
+      : "economy";
+
+    return (
+      <>
+        <Navbar />
+
+        <main className="min-h-screen bg-slate-50 px-4 py-8 dark:bg-slate-950">
+          <div className="mx-auto max-w-7xl">
+            <FlightSearch />
+
+            <div className="mt-10">
+              <h1 className="mb-2 text-2xl font-bold dark:text-white">
+                Duffel Test Flight Offers
+              </h1>
+
+              <p className="mb-6 text-sm text-slate-500">
+                External test-mode offers are displayed separately from your
+                local demo flights and bookings.
+              </p>
+
+              {validPassengers ? (
+                <DuffelResults
+                  origin={params.from ?? ""}
+                  destination={params.to ?? ""}
+                  departureDate={params.date ?? ""}
+                  passengers={parsedPassengers}
+                  cabinClass={cabinClass}
+                />
+              ) : (
+                <p role="alert" className="text-red-600">
+                  Invalid passenger count. Please select between 1 and 9
+                  passengers.
+                </p>
+              )}
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  // EXISTING DEMO SEARCH: Preserve the current Supabase booking flow.
   const supabase = await createClient();
 
-  let query = supabase.from("flights").select("*").eq("status", "scheduled");
+  let query = supabase
+    .from("flights")
+    .select("*")
+    .eq("status", "scheduled");
 
-  // FROM
   if (params.from) {
     query = query.eq("origin", params.from);
   }
 
-  // TO
   if (params.to) {
     query = query.eq("destination", params.to);
   }
 
-  //CURR_TIME+30mins
   const minDeparture = getMinDepartureTime();
 
-  // DATE FILTER
   if (params.date) {
     const startOfDay = `${params.date}T00:00:00`;
-
     const endOfDay = `${params.date}T23:59:59`;
 
     query = query
@@ -55,79 +124,36 @@ export default async function FlightsPage({
     ascending: true,
   });
 
-  console.log(error);
+  if (error) {
+    console.error("Supabase flight search failed:", error.message);
+  }
 
   return (
     <>
       <Navbar />
 
-      <main
-        className="
-        min-h-screen
-        bg-slate-50
-        px-4 py-8
-        dark:bg-slate-950
-      "
-      >
-        <div
-          className="
-          mx-auto
-          max-w-7xl
-        "
-        >
+      <main className="min-h-screen bg-slate-50 px-4 py-8 dark:bg-slate-950">
+        <div className="mx-auto max-w-7xl">
           <FlightSearch />
 
           <div className="mt-10">
-            <div
-              className="
-              mb-6 flex
-              items-center
-              justify-between
-            "
-            >
-              <h2
-                className="
-                text-2xl
-                font-bold
-              "
-              >
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold dark:text-white">
                 Available Flights
               </h2>
 
-              <span
-                className="
-                text-slate-500
-              "
-              >
+              <span className="text-slate-500">
                 {flights?.length ?? 0} Flights
               </span>
             </div>
 
             {flights?.length === 0 && (
-              <div
-                className="
-                rounded-[32px]
-                bg-white p-10
-                text-center
-                shadow-lg
-                dark:bg-slate-900
-              "
-              >
-                <h3
-                  className="
-                  text-2xl
-                  font-bold
-                "
-                >
+              <div className="rounded-[32px] bg-white p-10 text-center shadow-lg dark:bg-slate-900">
+                <h3 className="text-2xl font-bold dark:text-white">
                   No flights found
                 </h3>
 
-                <p
-                  className="
-                  mt-2
-                  text-slate-500
-                "
-                >
+                <p className="mt-2 text-slate-500">
                   Try changing destination or date.
                 </p>
               </div>
@@ -140,35 +166,31 @@ export default async function FlightsPage({
                   id={flight.id}
                   airline={flight.flight_no}
                   stops="Non-stop"
-                  departureDate={new Date(flight.departs_at).toLocaleDateString(
-                    "en-IN",
-                    {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    },
-                  )}
-                  departureTime={new Date(flight.departs_at).toLocaleTimeString(
-                    [],
-                    {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    },
-                  )}
-                  arrivalTime={new Date(flight.arrives_at).toLocaleTimeString(
-                    [],
-                    {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    },
-                  )}
+                  departureDate={new Date(
+                    flight.departs_at,
+                  ).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                  departureTime={new Date(
+                    flight.departs_at,
+                  ).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                  arrivalTime={new Date(
+                    flight.arrives_at,
+                  ).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                   origin={flight.origin}
                   destination={flight.destination}
                   duration={`${Math.floor(
                     (new Date(flight.arrives_at).getTime() -
                       new Date(flight.departs_at).getTime()) /
-                      1000 /
-                      60,
+                      60000,
                   )} min`}
                   price={flight.base_price}
                   classOptions={[

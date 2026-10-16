@@ -14,9 +14,12 @@ export default function FlightSearch() {
   const setSearchQuery = useFlightStore((state) => state.setSearchQuery);
   const setBookingStep = useFlightStore((state) => state.setBookingStep);
 
-  function handleSearch() {
-    if (!searchQuery.from || !searchQuery.to) {
-      return;
+
+  function handleSearch(source: "demo" | "duffel" = "demo") {
+    if (!searchQuery.from || !searchQuery.to) return;
+
+    if (source === "duffel") {
+      if (!searchQuery.date || searchQuery.from === searchQuery.to) return;
     }
 
     setBookingStep("search");
@@ -32,9 +35,11 @@ export default function FlightSearch() {
 
     params.set("passengers", searchQuery.passengers.toString());
     params.set("class", searchQuery.flightClass);
+    params.set("source", source);
 
     router.push(`/flights?${params.toString()}`);
   }
+
 
   return (
     <section
@@ -287,7 +292,7 @@ export default function FlightSearch() {
 
       {/* SEARCH BUTTON */}
       <button
-        onClick={handleSearch}
+        onClick={() => handleSearch("demo")}
         disabled={!searchQuery.from || !searchQuery.to}
         className="
         mt-8 flex w-full
@@ -305,6 +310,22 @@ export default function FlightSearch() {
         <Search size={24} />
         Search Flights
       </button>
+
+      <button
+        type="button"
+        onClick={() => handleSearch("duffel")}
+        disabled={
+          !searchQuery.from ||
+          !searchQuery.to ||
+          !searchQuery.date ||
+          searchQuery.from === searchQuery.to
+        }
+        className="mt-3 w-full rounded-[28px] border border-blue-600 py-4 font-semibold text-blue-600 disabled:opacity-50"
+      >
+        Search Duffel Test Offers
+      </button>
+
+
     </section>
   );
 }
