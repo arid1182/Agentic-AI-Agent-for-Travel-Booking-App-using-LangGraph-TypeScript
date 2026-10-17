@@ -1,8 +1,10 @@
 # ✈️ FlyAway — Flight Booking & Management PWA
+A modern, production-grade **Flight Booking & Management Platform** built with **Next.js 15, TypeScript, Tailwind CSS, Zustand, and Supabase (PostgreSQL)** featuring full PWA support.
 
-A modern **Flight Booking & Management Platform** built with **Next.js 15, TypeScript, Tailwind CSS, Zustand, Supabase, and PWA support**.
+### 🛠️ Development Phase: Foundations & Agentic Roadmap
+This repository is currently in an **active development phase**. The core system architecture has been heavily optimized with robust state management (Zustand) and atomic database locking layers (Supabase RPC) to serve as the structural foundation for an upcoming **Agentic AI Orchestration layer powered by LangGraph.js & TypeScript**. 
 
-The application enables users to search flights, select seats with live updates, manage bookings, reschedule/cancel tickets, and use the app as an installable Progressive Web App (PWA).
+The current milestone focuses on building a highly reliable, deterministic application runtime so that future LLM-based autonomous agents can interact with the system APIs without edge-case failures.
 
 ---
 
