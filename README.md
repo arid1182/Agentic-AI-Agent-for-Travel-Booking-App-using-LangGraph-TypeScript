@@ -47,6 +47,7 @@ https://agentic-ai-agent-for-travel-booking.vercel.app/
 - npx supabase init
 - npx supabase login
 - npx supabase link --project-ref your-project-reference-id
+- nps supabase db push
 - npx supabase db query --linked < supabase/seed.sql
 
 ## Run Project:

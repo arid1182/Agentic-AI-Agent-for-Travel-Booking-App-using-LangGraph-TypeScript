@@ -3,13 +3,19 @@ import type { Flight } from "./flight";
 import type { Seat } from "./seat";
 import type { PassengerForm } from "./passenger";
 
+
 export type SearchQuery = {
   from: string;
   to: string;
   date: string;
   passengers: number;
+  adults: number;
+  childrenAges: number[];
+  infantAges: number[];
+
   flightClass: "economy" | "business" | "first";
 };
+
 
 export type BookingStep =
   | "search"

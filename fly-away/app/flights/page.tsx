@@ -17,6 +17,9 @@ type FlightsPageProps = {
     to?: string;
     date?: string;
     passengers?: string;
+    adults?: string;
+    childrenAges?: string;
+    infantAges?: string;
     class?: string;
     source?: string;
   }>;
@@ -36,12 +39,27 @@ export default async function FlightsPage({
 
   // DUFFEL SEARCH: Do not query Supabase for external offers.
   if (params.source === "duffel") {
-    const parsedPassengers = Number(params.passengers ?? "1");
+    const adults = Number(params.adults ?? params.passengers ?? "1");
+    const childrenAges = params.childrenAges
+      ? params.childrenAges.split(",").map(Number)
+      : [];
+    const infantAges = params.infantAges
+      ? params.infantAges.split(",").map(Number)
+      : [];
+    const parsedPassengers =
+      adults + childrenAges.length + infantAges.length;
 
     const validPassengers =
-      Number.isInteger(parsedPassengers) &&
-      parsedPassengers >= 1 &&
-      parsedPassengers <= 9;
+      Number.isInteger(adults) &&
+      adults >= 1 &&
+      parsedPassengers <= 9 &&
+      childrenAges.every(
+        (age) => Number.isInteger(age) && age >= 2 && age <= 17,
+      ) &&
+      infantAges.every(
+        (age) => Number.isInteger(age) && age >= 0 && age < 2,
+      ) &&
+      infantAges.length <= adults;
 
     const requestedClass = params.class ?? "economy";
 
@@ -75,6 +93,9 @@ export default async function FlightsPage({
                   destination={params.to ?? ""}
                   departureDate={params.date ?? ""}
                   passengers={parsedPassengers}
+                  adults={adults}
+                  childrenAges={childrenAges}
+                  infantAges={infantAges}
                   cabinClass={cabinClass}
                 />
               ) : (

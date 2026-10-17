@@ -14,6 +14,9 @@ const initialSearchQuery: SearchQuery = {
   to: "",
   date: "",
   passengers: 1,
+  adults: 1,
+  childrenAges: [],
+  infantAges: [],
   flightClass: "economy",
 };
 
@@ -131,6 +134,27 @@ export const useFlightStore = create<FlightStoreState>()(
           }),
         ),
       }),
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as
+          | Partial<FlightStoreState>
+          | undefined;
+        const persistedSearchQuery = persisted?.searchQuery as
+          | Partial<SearchQuery>
+          | undefined;
+
+        return {
+          ...currentState,
+          ...persisted,
+          searchQuery: {
+            ...initialSearchQuery,
+            ...persistedSearchQuery,
+            adults:
+              persistedSearchQuery?.adults ??
+              persistedSearchQuery?.passengers ??
+              initialSearchQuery.adults,
+          },
+        };
+      },
     },
   ),
 );

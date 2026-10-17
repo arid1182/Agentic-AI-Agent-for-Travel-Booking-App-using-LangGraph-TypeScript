@@ -30,6 +30,9 @@ type Props = {
   destination: string;
   departureDate: string;
   passengers: number;
+  adults: number;
+  childrenAges: number[];
+  infantAges: number[];
   cabinClass: string;
 };
 
@@ -38,6 +41,9 @@ export default function DuffelResults({
   destination,
   departureDate,
   passengers,
+  adults,
+  childrenAges,
+  infantAges,
   cabinClass,
 }: Props) {
   const [offers, setOffers] = useState<DuffelOffer[]>([]);
@@ -73,6 +79,9 @@ export default function DuffelResults({
             destination,
             departureDate,
             passengers,
+            adults,
+            childrenAges,
+            infantAges,
             cabinClass,
           }),
         });
@@ -99,7 +108,16 @@ export default function DuffelResults({
     void search();
 
     return () => controller.abort();
-  }, [origin, destination, departureDate, passengers, cabinClass]);
+  }, [
+    origin,
+    destination,
+    departureDate,
+    passengers,
+    adults,
+    childrenAges,
+    infantAges,
+    cabinClass,
+  ]);
 
   function formatTime(value?: string) {
     if (!value) return "Time unavailable";

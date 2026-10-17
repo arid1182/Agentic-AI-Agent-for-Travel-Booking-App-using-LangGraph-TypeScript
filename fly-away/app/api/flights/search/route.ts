@@ -6,6 +6,11 @@ export const runtime = "nodejs";
 const AIRPORT_CODE = /^[A-Z]{3}$/;
 const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}$/;
 
+type DuffelPassengerInput = {
+  type: "adult" | "child" | "infant_without_seat";
+  age?: number;
+};
+
 export async function POST(request: NextRequest) {
   const token = process.env.DUFFEL_ACCESS_TOKEN;
 
@@ -21,6 +26,9 @@ export async function POST(request: NextRequest) {
     destination?: string;
     departureDate?: string;
     passengers?: number;
+    adults?: number;
+    childrenAges?: number[];
+    infantAges?: number[];
     cabinClass?: string;
   };
 
@@ -36,7 +44,9 @@ export async function POST(request: NextRequest) {
   const origin = body.origin?.trim().toUpperCase();
   const destination = body.destination?.trim().toUpperCase();
   const departureDate = body.departureDate;
-  const passengers = body.passengers ?? 1;
+  const adults = body.adults ?? body.passengers ?? 1;
+  const childrenAges = body.childrenAges ?? [];
+  const infantAges = body.infantAges ?? [];
   const cabinClass = body.cabinClass ?? "economy";
 
   if (
@@ -73,16 +83,41 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (
-    !Number.isInteger(passengers) ||
-    passengers < 1 ||
-    passengers > 9
-  ) {
+  if (!Array.isArray(childrenAges) || !Array.isArray(infantAges)) {
     return NextResponse.json(
-      { error: "Passengers must be an integer between 1 and 9." },
+      { error: "Invalid passenger counts or ages." },
       { status: 400 }
     );
   }
+
+  const totalPassengers = adults + childrenAges.length + infantAges.length;
+
+  if (
+    !Number.isInteger(adults) ||
+    adults < 1 ||
+    totalPassengers > 9 ||
+    childrenAges.some(
+      (age) => !Number.isInteger(age) || age < 2 || age > 17,
+    ) ||
+    infantAges.some(
+      (age) => !Number.isInteger(age) || age < 0 || age >= 2,
+    ) ||
+    infantAges.length > adults
+  ) {
+    return NextResponse.json(
+      { error: "Invalid passenger counts or ages." },
+      { status: 400 }
+    );
+  }
+
+  const duffelPassengers: DuffelPassengerInput[] = [
+    ...Array.from({ length: adults }, () => ({ type: "adult" as const })),
+    ...childrenAges.map((age) => ({ type: "child" as const, age })),
+    ...infantAges.map((age) => ({
+      type: "infant_without_seat" as const,
+      age,
+    })),
+  ];
 
   const allowedCabins = [
     "economy",
@@ -99,6 +134,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const duffelPassengers = [
+      ...Array.from({ length: adults }, () => ({
+        type: "adult" as const,
+      })),
+      ...childrenAges.map((age) => ({ age })),
+      ...infantAges.map((age) => ({ age })),
+    ];
+
     const response = await fetch(
       "https://api.duffel.com/air/offer_requests",
       {
@@ -118,9 +161,7 @@ export async function POST(request: NextRequest) {
                 departure_date: departureDate,
               },
             ],
-            passengers: Array.from({ length: passengers }, () => ({
-              type: "adult",
-            })),
+            passengers: duffelPassengers,
             cabin_class: cabinClass,
           },
         }),
@@ -130,16 +171,6 @@ export async function POST(request: NextRequest) {
     );
 
     const result = await response.json();
-
-    if (!response.ok) {
-      // Avoid returning provider error details or credentials to the browser.
-      console.error("Duffel search failed:", response.status);
-
-      return NextResponse.json(
-        { error: "Flight search provider returned an error." },
-        { status: response.status === 429 ? 429 : 502 }
-      );
-    }
 
     const offers = result.data?.offers ?? [];
 
