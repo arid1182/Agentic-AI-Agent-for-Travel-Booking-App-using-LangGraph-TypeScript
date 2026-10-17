@@ -14,7 +14,7 @@ The current milestone focuses on building a highly reliable, deterministic appli
 https://agentic-ai-agent-for-travel-booking.vercel.app/
 
 **Test Credentials:**
-- email: yigoto8705@betshubs.com
+- email: hello@capclouds.com
 - password:123456
 
 ## Tech Stack
