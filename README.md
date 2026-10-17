@@ -11,10 +11,10 @@ The current milestone focuses on building a highly reliable, deterministic appli
 ## Live Demo
 
 **Deployed App:**  
-https://fly-away-lime.vercel.app/
+https://agentic-ai-agent-for-travel-booking.vercel.app/
 
 **Test Credentials:**
-- email: admin@test.com
+- email: yigoto8705@betshubs.com
 - password:123456
 
 ## Tech Stack
