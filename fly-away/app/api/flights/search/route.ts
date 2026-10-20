@@ -134,12 +134,18 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const duffelPassengers = [
+    const duffelPassengers: DuffelPassengerInput[] = [
       ...Array.from({ length: adults }, () => ({
         type: "adult" as const,
       })),
-      ...childrenAges.map((age) => ({ age })),
-      ...infantAges.map((age) => ({ age })),
+      ...childrenAges.map((age) => ({
+        type: "child" as const,
+        age,
+      })),
+      ...infantAges.map((age) => ({
+        type: "infant_without_seat" as const,
+        age,
+      })),
     ];
 
     const response = await fetch(

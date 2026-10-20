@@ -14,6 +14,8 @@ export type Passenger = {
 
 export type PassengerForm = {
   fullName: string;
+  givenName: string;
+  familyName: string;
   passportNo: string;
   nationality: string;
   dob: string;

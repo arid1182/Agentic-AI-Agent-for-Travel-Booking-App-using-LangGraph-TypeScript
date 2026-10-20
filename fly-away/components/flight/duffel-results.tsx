@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type DuffelSegment = {
   airline?: string;
@@ -46,6 +47,7 @@ export default function DuffelResults({
   infantAges,
   cabinClass,
 }: Props) {
+  const router = useRouter();
   const [offers, setOffers] = useState<DuffelOffer[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -263,6 +265,27 @@ export default function DuffelResults({
                 This offer is selected locally. No booking or payment has
                 been created yet.
               </p>
+              <button
+                type="button"
+                onClick={() => {
+                  const params = new URLSearchParams({
+                    provider: "duffel",
+                    offerId: offer.id,
+                    passengers: String(passengers),
+                    adults: String(adults),
+                    childrenAges: childrenAges.join(","),
+                    infantAges: infantAges.join(","),
+                    origin,
+                    destination,
+                    departureDate,
+                    cabinClass,
+                  });
+                  router.push(`/booking?${params.toString()}`);
+                }}
+                className="mt-3 w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                Continue to passenger details
+              </button>
               <button
                 type="button"
                 onClick={() => setSelectedOffer(null)}
