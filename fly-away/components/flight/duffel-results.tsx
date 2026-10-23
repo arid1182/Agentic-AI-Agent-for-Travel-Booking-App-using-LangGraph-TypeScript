@@ -1,6 +1,7 @@
 
 "use client";
 
+import DestinationWeather from "@/components/weather/destination-weather";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -232,6 +233,13 @@ export default function DuffelResults({
                     </p>
                   </div>
                 ))}
+                {slice.destination && slice.segments?.[0]?.departingAt && (
+                  <DestinationWeather
+                    airportCode={slice.destination}
+                    tripDate={slice.segments[0].departingAt!.slice(0, 10)}
+                    className="mt-4"
+                  />
+                )}
               </div>
             ))}
           </div>

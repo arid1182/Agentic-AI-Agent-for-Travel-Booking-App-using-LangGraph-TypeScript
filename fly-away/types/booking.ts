@@ -7,7 +7,7 @@ export type Booking = {
   flight_id: string;
   seat_id: string;
 
-  status: "confirmed" | "rescheduled" | "cancelled";
+  status: "confirmed" | "rescheduled" | "cancelled" | "held";
 
   booked_at: string;
 

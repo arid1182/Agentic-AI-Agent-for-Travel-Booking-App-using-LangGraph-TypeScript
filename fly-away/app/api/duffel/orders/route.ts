@@ -15,7 +15,7 @@ type PassengerInput = {
 
 type DuffelOfferPassenger = {
   id?: string;
-  age?: number;
+  age?: number | null;
   type?: string;
 };
 
@@ -31,6 +31,40 @@ type DuffelOffer = {
   slices?: any[];
 };
 
+type DuffelOrder = {
+  id: string;
+  type?: string;
+  booking_reference?: string | null;
+  booking_references?: { booking_reference: string }[];
+  total_amount?: string | null;
+  total_currency?: string | null;
+  payment_status?: {
+    paid_at?: string | null;
+    awaiting_payment?: boolean;
+  };
+  passengers?: any[];
+  slices?: any[];
+};
+
+type DuffelPassengerPayload = {
+  id: string;
+  given_name: string;
+  family_name: string;
+  born_on: string;
+  gender: string;
+  title: string;
+  email: string;
+  phone_number: string;
+  infant_passenger_id?: string;
+};
+
+/** Duffel passenger types, ordered as the API expects them. */
+const PASSENGER_TYPE_ORDER: Record<string, number> = {
+  adult: 0,
+  child: 1,
+  infant_without_seat: 2,
+};
+
 function isValidDate(value: unknown): value is string {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return false;
@@ -42,6 +76,39 @@ function isValidDate(value: unknown): value is string {
     !Number.isNaN(date.getTime()) &&
     date.toISOString().slice(0, 10) === value
   );
+}
+
+/**
+ * Subtracts whole years from an ISO timestamp, keeping the result in UTC so
+ * the day never shifts because of a timezone offset.
+ */
+function subtractYears(date: string, years: number): string {
+  const parsed = new Date(`${date}T00:00:00.000Z`);
+
+  parsed.setUTCFullYear(parsed.getUTCFullYear() - years);
+
+  return parsed.toISOString().slice(0, 10);
+}
+
+/**
+ * Duffel exposes the travel date on the first segment, not on the slice.
+ * `departure_date` is not part of the offer slice payload.
+ */
+function getTravelDate(offer: DuffelOffer): string | null {
+  const segment = offer.slices?.[0]?.segments?.[0];
+  const departingAt = segment?.departing_at;
+
+  if (typeof departingAt === "string" && departingAt.length >= 10) {
+    return departingAt.slice(0, 10);
+  }
+
+  const sliceDate = offer.slices?.[0]?.departure_date;
+
+  if (typeof sliceDate === "string" && sliceDate.length >= 10) {
+    return sliceDate.slice(0, 10);
+  }
+
+  return null;
 }
 
 function isValidEmail(value: string): boolean {
@@ -82,6 +149,229 @@ function isValidPassenger(
     typeof passenger.phoneNumber === "string" &&
     isValidPhoneNumber(passenger.phoneNumber.trim())
   );
+}
+
+/**
+ * Maps the passenger form entries onto the passengers Duffel returned with
+ * the offer.
+ *
+ * Duffel requires the passengers to be sent in the order adults, children,
+ * then infants. Children and infants are always titled "miss". Infants have to
+ * be associated with an adult through `infant_passenger_id`, and their
+ * `born_on` has to match their age on the departure date.
+ */
+function buildOrderPassengers(
+  offer: DuffelOffer,
+  formPassengers: PassengerInput[],
+  travelDate: string
+): { passengers: DuffelPassengerPayload[]; error?: string } {
+  const offerPassengers = offer.passengers ?? [];
+
+  if (offerPassengers.length === 0) {
+    return { passengers: [], error: "The offer has no passengers." };
+  }
+
+  if (formPassengers.length !== offerPassengers.length) {
+    return {
+      passengers: [],
+      error:
+        "The number of passenger details does not match the selected offer.",
+    };
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Pair each form entry with the offer passenger it belongs to before
+  // re-ordering, so the details never move to a different traveller.
+  const pairs = offerPassengers.map((offerPassenger, index) => ({
+    offerPassenger,
+    form: formPassengers[index],
+  }));
+
+  // Duffel expects adults first, then children, then infants.
+  const ordered = pairs.sort(
+    (a, b) =>
+      (PASSENGER_TYPE_ORDER[a.offerPassenger.type ?? "adult"] ?? 0) -
+      (PASSENGER_TYPE_ORDER[b.offerPassenger.type ?? "adult"] ?? 0)
+  );
+
+  const adults = ordered.filter(
+    (pair) => pair.offerPassenger.type === "adult"
+  );
+  const infants = ordered.filter(
+    (pair) => pair.offerPassenger.type === "infant_without_seat"
+  );
+
+  const passengers: DuffelPassengerPayload[] = [];
+
+  ordered.forEach(({ offerPassenger, form }) => {
+    if (!offerPassenger.id) {
+      throw new Error("The offer contains a passenger without an id.");
+    }
+
+    const isInfant = offerPassenger.type === "infant_without_seat";
+    const isChild = offerPassenger.type === "child";
+    const age =
+      typeof offerPassenger.age === "number" ? offerPassenger.age : null;
+
+    let bornOn = form.dob as string;
+
+    if (age !== null) {
+      // The date of birth has to line up with the age on the travel date.
+      bornOn = subtractYears(travelDate, age);
+
+      // A newborn cannot have a date of birth in the future.
+      if (bornOn > today) {
+        bornOn = today;
+      }
+    }
+
+    const payload: DuffelPassengerPayload = {
+      id: offerPassenger.id,
+      given_name: (form.givenName as string).trim(),
+      family_name: (form.familyName as string).trim(),
+      born_on: bornOn,
+      gender: form.gender as string,
+      title: isInfant || isChild ? "miss" : (form.title as string),
+      email: (form.email as string).trim(),
+      phone_number: (form.phoneNumber as string).trim(),
+    };
+
+    if (!isInfant) {
+      // Every infant has to travel with an adult, so the first adults are
+      // linked to the infants in order.
+      const adultIndex = adults.findIndex(
+        (pair) => pair.offerPassenger.id === offerPassenger.id
+      );
+
+      if (adultIndex !== -1 && adultIndex < infants.length) {
+        payload.infant_passenger_id =
+          infants[adultIndex].offerPassenger.id;
+      }
+    }
+
+    passengers.push(payload);
+  });
+
+  return { passengers };
+}
+
+type DuffelApiResponse = {
+  data?: DuffelOrder & { paid_at?: string | null };
+  errors?: { code?: string; message?: string }[];
+};
+
+type DuffelRequestOptions = {
+  token: string;
+  version: string;
+  offer: DuffelOffer;
+  passengers: DuffelPassengerPayload[];
+};
+
+function duffelHeaders(token: string, version: string) {
+  return {
+    Authorization: `Bearer ${token}`,
+    "Duffel-Version": version,
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+}
+
+/**
+ * Creates a held order. The price is guaranteed for a short time and still
+ * has to be paid through the payments endpoint.
+ */
+async function createHeldOrder({
+  token,
+  version,
+  offer,
+  passengers,
+}: DuffelRequestOptions): Promise<DuffelApiResponse> {
+  const response = await fetch("https://api.duffel.com/air/orders", {
+    method: "POST",
+    headers: duffelHeaders(token, version),
+    cache: "no-store",
+    signal: AbortSignal.timeout(45000),
+    body: JSON.stringify({
+      data: {
+        type: "hold",
+        selected_offers: [offer.id],
+        passengers,
+      },
+    }),
+  });
+
+  return (await response.json().catch(() => ({}))) as DuffelApiResponse;
+}
+
+/**
+ * Creates an order that is paid straight away. Duffel only accepts the
+ * payment inside the order request for offers that require instant payment.
+ */
+async function createInstantOrder({
+  token,
+  version,
+  offer,
+  passengers,
+}: DuffelRequestOptions): Promise<DuffelApiResponse> {
+  const amount = offer.total_amount ?? "0";
+  const currency = offer.total_currency ?? "USD";
+
+  const response = await fetch("https://api.duffel.com/air/orders", {
+    method: "POST",
+    headers: duffelHeaders(token, version),
+    cache: "no-store",
+    signal: AbortSignal.timeout(45000),
+    body: JSON.stringify({
+      data: {
+        type: "instant",
+        selected_offers: [offer.id],
+        passengers,
+        payments: [
+          {
+            type: "balance",
+            amount,
+            currency,
+          },
+        ],
+      },
+    }),
+  });
+
+  return (await response.json().catch(() => ({}))) as DuffelApiResponse;
+}
+
+/**
+ * Pays the outstanding balance of a held order. The amount has to match the
+ * order total, otherwise Duffel rejects the payment.
+ */
+async function payForOrder({
+  token,
+  version,
+  order,
+}: {
+  token: string;
+  version: string;
+  order: DuffelOrder;
+}): Promise<DuffelApiResponse> {
+  const response = await fetch("https://api.duffel.com/air/payments", {
+    method: "POST",
+    headers: duffelHeaders(token, version),
+    cache: "no-store",
+    signal: AbortSignal.timeout(45000),
+    body: JSON.stringify({
+      data: {
+        order_id: order.id,
+        payment: {
+          type: "balance",
+          amount: order.total_amount ?? "0",
+          currency: order.total_currency ?? "USD",
+        },
+      },
+    }),
+  });
+
+  return (await response.json().catch(() => ({}))) as DuffelApiResponse;
 }
 
 export async function POST(req: Request) {
@@ -236,53 +526,38 @@ export async function POST(req: Request) {
       );
     }
 
-    // This milestone only creates eligible held orders; it does not take payment.
-    if (offer.payment_requirements?.requires_instant_payment !== false) {
+    const travelDate = getTravelDate(offer);
+
+    if (!travelDate) {
       return NextResponse.json(
-        {
-          error:
-            "This offer requires instant payment, or Duffel did not confirm hold eligibility. No order was created. Payment integration is a later milestone.",
-          currentOffer: {
-            id: offer.id,
-            totalAmount: offer.total_amount,
-            currency: offer.total_currency,
-          },
-        },
+        { error: "The selected offer has no travel date." },
         { status: 409 }
       );
     }
 
-    const passengers = validatedPassengers.map((passenger, index) => ({
-      id: offerPassengers[index].id!,
-      given_name: passenger.givenName.trim(),
-      family_name: passenger.familyName.trim(),
-      born_on: passenger.dob,
-      gender: passenger.gender,
-      title: passenger.title,
-      email: passenger.email.trim(),
-      phone_number: passenger.phoneNumber.trim(),
-    }));
-
-    const orderResponse = await fetch(
-      "https://api.duffel.com/air/orders",
-      {
-        method: "POST",
-        headers,
-        cache: "no-store",
-        signal: AbortSignal.timeout(45000),
-        body: JSON.stringify({
-          data: {
-            type: "hold",
-            selected_offers: [offerId],
-            passengers,
-          },
-        }),
-      }
+    const { passengers, error: passengerError } = buildOrderPassengers(
+      offer,
+      validatedPassengers,
+      travelDate
     );
 
-    const orderPayload = await orderResponse.json().catch(() => ({}));
+    if (passengerError) {
+      return NextResponse.json(
+        { error: passengerError },
+        { status: 400 }
+      );
+    }
 
-    if (!orderResponse.ok || !orderPayload.data) {
+    // Offers that need instant payment cannot be held, so they are created
+    // with an instant order that pays the balance straight away.
+    const requiresInstantPayment =
+      offer.payment_requirements?.requires_instant_payment === true;
+
+    const orderPayload = requiresInstantPayment
+      ? await createInstantOrder({ token, version, offer, passengers })
+      : await createHeldOrder({ token, version, offer, passengers });
+
+    if (!orderPayload.data) {
       // Keep the provider's structured validation errors in server logs.
       // Never log access tokens or passenger document details.
       console.log(
@@ -307,11 +582,39 @@ export async function POST(req: Request) {
       );
     }
 
-    const order = orderPayload.data;
+    const order = orderPayload.data as DuffelOrder;
+
+    // A held order still has to be paid before the tickets are issued.
+    let paidAt = order.payment_status?.paid_at ?? null;
+
+    if (order.payment_status?.awaiting_payment) {
+      const payment = await payForOrder({ token, version, order });
+
+      if (!payment.data) {
+        console.error("Duffel order created but payment failed", {
+          orderId: order.id,
+        });
+
+        return NextResponse.json(
+          {
+            error:
+              "The order was created but the payment could not be completed. Contact support with this provider order ID.",
+            providerOrderId: order.id,
+          },
+          { status: 502 }
+        );
+      }
+
+      paidAt = payment.data.paid_at ?? paidAt;
+    }
 
     const itinerarySlices = order.slices ?? offer.slices ?? [];
 
+    // Only mark the booking as confirmed once Duffel reports it as paid.
+    const bookingStatus = paidAt ? "confirmed" : "held";
+
     const itinerary = {
+      paidAt,
       slices: itinerarySlices.map((slice: any) => ({
         origin: slice.origin?.iata_code,
         destination: slice.destination?.iata_code,
@@ -334,7 +637,7 @@ export async function POST(req: Request) {
         offer_id: offerId,
         order_id: order.id,
         booking_reference: order.booking_reference ?? null,
-        status: "held",
+        status: bookingStatus,
         total_amount: order.total_amount ?? offer.total_amount ?? null,
         currency: order.total_currency ?? offer.total_currency ?? null,
         passenger_count: passengers.length,

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Navbar from "@/components/layout/navbar";
+import LocationWeather from "@/components/weather/location-weather";
 import Link from "next/link";
 
 export default function Home() {
@@ -116,6 +117,34 @@ export default function Home() {
                 w-full object-contain
               "
               />
+            </div>
+          </div>
+        </section>
+
+        {/* DESTINATION WEATHER */}
+        <section className="px-5 pb-16 lg:px-8">
+          <div className="mx-auto max-w-3xl">
+            <h2
+              className="
+              text-center text-3xl font-bold
+            "
+            >
+              Check the weather before you fly
+            </h2>
+
+            <p
+              className="
+              mx-auto mt-3 max-w-xl text-center
+              text-slate-600
+              dark:text-slate-400
+            "
+            >
+              Search any city worldwide to see the forecast for your
+              destination.
+            </p>
+
+            <div className="mt-8">
+              <LocationWeather />
             </div>
           </div>
         </section>

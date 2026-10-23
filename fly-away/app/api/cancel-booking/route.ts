@@ -33,25 +33,31 @@ export async function POST(req: Request) {
       );
     }
 
-    // Call the PostgreSQL function
-    const { data, error } = await supabase.rpc(
+    // Call the PostgreSQL function (legacy bookings)
+    const { data: legacyData, error: legacyError } = await supabase.rpc(
       "cancel_booking",
       { p_booking_id: bookingId }
     );
 
-    if (error) {
-      console.error("Cancellation failed:", error.message);
-
-      return NextResponse.json(
-        { error: "Cancellation failed" },
-        { status: 500 }
-      );
+    // If the legacy RPC succeeded, we're done.
+    if (!legacyError && legacyData) {
+      return NextResponse.json({ success: true });
     }
 
-    if (!data) {
+    // Otherwise fall back to the Duffel bookings table.
+    const { data: duffelData, error: duffelError } = await supabase
+      .from("duffel_bookings")
+      .update({ status: "cancelled" })
+      .eq("id", bookingId)
+      .select("id");
+
+    if (duffelError || !duffelData?.length) {
+      const message = duffelError?.message || "Booking not found in Duffel orders";
+      console.error("Cancellation failed:", message);
+
       return NextResponse.json(
-        { error: "Booking not found or already cancelled" },
-        { status: 404 }
+        { error: message },
+        { status: 500 }
       );
     }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import DestinationWeather from "@/components/weather/destination-weather";
 import Navbar from "@/components/layout/navbar";
 
 import { useEffect, useState } from "react";
@@ -66,7 +67,7 @@ export default function MyBookingsPage() {
           return;
         }
 
-        // BOOKINGS
+        // BOOKINGS (legacy system)
         const { data: bookingData, error } = await supabase
           .from("bookings")
           .select("*")
@@ -77,37 +78,63 @@ export default function MyBookingsPage() {
 
         console.log(error);
 
-        if (!bookingData) {
-          setLoading(false);
+        // DUFFEL BOOKINGS (new system)
+        const { data: duffelData, error: duffelError } = await supabase
+          .from("duffel_bookings")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", {
+            ascending: false,
+          });
 
-          return;
-        }
+        console.log(duffelError);
 
-        // FETCH FLIGHT + SEAT
-        const enrichedBookings = await Promise.all(
-          bookingData.map(async (booking) => {
-            const { data: flight } = await supabase
-              .from("flights")
-              .select("*")
-              .eq("id", booking.flight_id)
-              .single();
-
-            const { data: seat } = await supabase
-              .from("seats")
-              .select("*")
-              .eq("id", booking.seat_id)
-              .single();
-
-            return {
-              ...booking,
-              flight,
-              seat,
-            };
+        const legacyBookings: BookingCard[] = (bookingData ?? []).map(
+          (booking) => ({
+            ...booking,
+            flight: undefined,
+            seat: undefined,
           }),
         );
 
-        setBookings(enrichedBookings);
-        setCachedBookings(enrichedBookings);
+        const duffelBookings: BookingCard[] = (duffelData ?? []).map(
+          (booking) => {
+            const itinerary = booking.itinerary as
+              | { slices: Array<{ origin?: string; destination?: string; segments: Array<{ airline?: string; flightNumber?: string; origin?: string; destination?: string; departingAt?: string; arrivingAt?: string }> }> }
+              | undefined;
+            const firstSlice = itinerary?.slices?.[0];
+            const firstSegment = firstSlice?.segments?.[0];
+
+            return {
+              id: booking.id,
+              user_id: booking.user_id,
+              flight_id: "",
+              seat_id: "",
+              status: booking.status as Booking["status"],
+              booked_at: booking.created_at,
+              total_price: Number(booking.total_amount ?? 0),
+              pnr_code: booking.booking_reference ?? "",
+              flight: firstSegment
+                ? {
+                    id: "",
+                    flight_no: firstSegment.flightNumber ?? "",
+                    aircraft_type: "",
+                    base_price: 0,
+                    status: "scheduled",
+                    origin: firstSlice.origin ?? "",
+                    destination: firstSlice.destination ?? "",
+                    departs_at: firstSegment.departingAt ?? "",
+                    arrives_at: firstSegment.arrivingAt ?? "",
+                    created_at: "",
+                  }
+                : undefined,
+              seat: undefined,
+            };
+          },
+        );
+
+        setBookings([...legacyBookings, ...duffelBookings]);
+        setCachedBookings([...legacyBookings, ...duffelBookings]);
       } catch (error) {
         console.error(error);
       } finally {
@@ -286,6 +313,13 @@ export default function MyBookingsPage() {
                         {" → "}
                         {booking.flight?.destination}
                       </p>
+                      {booking.flight?.destination && booking.flight?.departs_at && (
+                        <DestinationWeather
+                          airportCode={booking.flight.destination}
+                          tripDate={booking.flight.departs_at.slice(0, 10)}
+                          className="mt-3"
+                        />
+                      )}
 
                       <p className="mt-2">
                         PNR:{" "}

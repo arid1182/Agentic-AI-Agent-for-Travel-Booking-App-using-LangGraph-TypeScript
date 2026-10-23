@@ -1,11 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Calendar, MapPin, Search } from "lucide-react";
 
+import LocationWeather from "@/components/weather/location-weather";
 import { airports } from "@/constants/airports";
+import { matchAirport } from "@/lib/airport-matcher";
 import { useFlightStore } from "@/store/flight-store";
+import type { LocationResult } from "@/types/location-autocomplete";
 
 export default function FlightSearch() {
   const router = useRouter();
@@ -13,6 +17,13 @@ export default function FlightSearch() {
   const searchQuery = useFlightStore((state) => state.searchQuery);
   const setSearchQuery = useFlightStore((state) => state.setSearchQuery);
   const setBookingStep = useFlightStore((state) => state.setBookingStep);
+
+  // Arbitrary destination picked via the Photon autocomplete. This never
+  // touches the Duffel search params on its own — it only ever *suggests* an
+  // airport code the user can opt into.
+  const [destination, setDestination] = useState<LocationResult | null>(null);
+
+  const destinationAirport = destination ? matchAirport(destination) : null;
 
   function handleSearch(source: "demo" | "duffel" = "demo") {
     const adults = searchQuery.adults ?? searchQuery.passengers ?? 1;
@@ -458,6 +469,33 @@ export default function FlightSearch() {
       >
         Search Duffel Test Offers
         </button>
+
+      {/* DESTINATION WEATHER */}
+      <div className="mt-8 border-t border-slate-200 pt-8 dark:border-slate-800">
+        <h2 className="mb-1 text-lg font-semibold">Destination weather</h2>
+
+        <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+          Search any city worldwide to check the forecast for your trip. This
+          is independent of the airport codes used for the flight search.
+        </p>
+
+        <LocationWeather
+          tripDate={searchQuery.date || undefined}
+          onLocationChange={setDestination}
+          showAirportMatch
+        />
+
+        {destinationAirport && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery({ to: destinationAirport.code })}
+            className="mt-4 w-full rounded-[24px] border border-blue-600 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-50 dark:hover:bg-slate-800"
+          >
+            Use {destinationAirport.city} ({destinationAirport.code}) as
+            destination
+          </button>
+        )}
+      </div>
     </section>
   );
 }

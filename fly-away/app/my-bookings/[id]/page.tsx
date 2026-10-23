@@ -1,5 +1,6 @@
 "use client";
 
+import DestinationWeather from "@/components/weather/destination-weather";
 import Navbar from "@/components/layout/navbar";
 
 import { useParams } from "next/navigation";
@@ -31,6 +32,7 @@ export default function BookingDetailsPage() {
   const [passengers, setPassengers] = useState<Passenger[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [isDuffelBooking, setIsDuffelBooking] = useState(false);
   const resetBooking = useFlightStore((state) => state.resetBooking);
 
   async function handleCancel() {
@@ -40,12 +42,15 @@ export default function BookingDetailsPage() {
 
     if (!confirmed) return;
 
-    const { error } = await supabase.rpc("cancel_booking", {
-      p_booking_id: booking?.id,
+    const res = await fetch("/api/cancel-booking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId: booking?.id }),
     });
 
-    if (error) {
-      toast.error(error.message);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast.error(err.error || "Cancellation failed");
 
       return;
     }
@@ -56,44 +61,140 @@ export default function BookingDetailsPage() {
     router.push("/my-bookings");
   }
 
+  async function handleConfirmPayment() {
+    const confirmed = window.confirm(
+      "Are you sure you want to confirm payment and issue tickets for this booking?",
+    );
+
+    if (!confirmed) return;
+
+    const res = await fetch("/api/duffel/confirm-payment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId: booking?.id }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (err.needsRebook) {
+        toast.error(err.error);
+        router.push("/flights");
+        return;
+      }
+      toast.error(err.error || "Confirm payment failed");
+
+      return;
+    }
+
+    toast.success("Booking confirmed");
+    router.push("/my-bookings");
+  }
+
   useEffect(() => {
     async function loadTicket() {
+      // Try the legacy bookings table first.
       const { data: bookingData } = await supabase
         .from("bookings")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (!bookingData) {
+      if (bookingData) {
+        setBooking(bookingData);
+        setIsDuffelBooking(false);
+
+        const { data: flightData } = await supabase
+          .from("flights")
+          .select("*")
+          .eq("id", bookingData.flight_id)
+          .single();
+
+        setFlight(flightData);
+
+        const { data: seatData } = await supabase
+          .from("seats")
+          .select("*")
+          .eq("id", bookingData.seat_id)
+          .single();
+
+        setSeat(seatData);
+
+        const { data: passengerData } = await supabase
+          .from("passengers")
+          .select("*")
+          .eq("booking_id", bookingData.id);
+
+        setPassengers(passengerData ?? []);
+
         setLoading(false);
 
         return;
       }
 
-      setBooking(bookingData);
-
-      const { data: flightData } = await supabase
-        .from("flights")
+      // Fall back to Duffel bookings.
+      const { data: duffelData } = await supabase
+        .from("duffel_bookings")
         .select("*")
-        .eq("id", bookingData.flight_id)
+        .eq("id", id)
         .single();
 
-      setFlight(flightData);
+      if (!duffelData) {
+        setLoading(false);
 
-      const { data: seatData } = await supabase
-        .from("seats")
-        .select("*")
-        .eq("id", bookingData.seat_id)
-        .single();
+        return;
+      }
 
-      setSeat(seatData);
+      const itinerary = duffelData.itinerary as
+        | {
+            slices: Array<{
+              origin?: string;
+              destination?: string;
+              segments: Array<{
+                airline?: string;
+                flightNumber?: string;
+                origin?: string;
+                destination?: string;
+                departingAt?: string;
+                arrivingAt?: string;
+              }>;
+            }>;
+          }
+        | undefined;
+      const firstSlice = itinerary?.slices?.[0];
+      const firstSegment = firstSlice?.segments?.[0];
 
-      const { data: passengerData } = await supabase
-        .from("passengers")
-        .select("*")
-        .eq("booking_id", bookingData.id);
+      setBooking({
+        id: duffelData.id,
+        user_id: duffelData.user_id,
+        flight_id: "",
+        seat_id: "",
+        status: duffelData.status as Booking["status"],
+        booked_at: duffelData.created_at,
+        total_price: Number(duffelData.total_amount ?? 0),
+        pnr_code: duffelData.booking_reference ?? "",
+      });
 
-      setPassengers(passengerData ?? []);
+      setIsDuffelBooking(true);
+
+      setFlight(
+        firstSegment
+          ? {
+              id: "",
+              flight_no: firstSegment.flightNumber ?? "",
+              aircraft_type: "",
+              base_price: 0,
+              status: "scheduled",
+              origin: firstSlice?.origin ?? "",
+              destination: firstSlice?.destination ?? "",
+              departs_at: firstSegment.departingAt ?? "",
+              arrives_at: firstSegment.arrivingAt ?? "",
+              created_at: "",
+            }
+          : null,
+      );
+
+      setSeat(null);
+      setPassengers([]);
 
       setLoading(false);
     }
@@ -208,6 +309,13 @@ export default function BookingDetailsPage() {
                   <p>
                     Route: {flight?.origin}→{flight?.destination}
                   </p>
+                  {flight?.destination && flight?.departs_at && (
+                    <DestinationWeather
+                      airportCode={flight.destination}
+                      tripDate={flight.departs_at.slice(0, 10)}
+                      className="mt-3"
+                    />
+                  )}
 
                   <p>
                     Departure Date:
@@ -279,6 +387,21 @@ export default function BookingDetailsPage() {
 
               <span>₹{booking.total_price}</span>
             </div>
+            {isDuffelBooking && booking?.status === "held" ? (
+              <button
+                onClick={handleConfirmPayment}
+                className="
+                        rounded-2xl
+                        bg-blue-600
+                        px-5 py-3
+                        w-full
+                        my-5
+                        text-white
+                      "
+              >
+                Confirm Booking
+              </button>
+            ) : null}
             <button
               onClick={handleCancel}
               className="

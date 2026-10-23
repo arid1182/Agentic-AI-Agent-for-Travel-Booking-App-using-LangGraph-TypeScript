@@ -6,10 +6,26 @@ export const runtime = "nodejs";
 const AIRPORT_CODE = /^[A-Z]{3}$/;
 const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}$/;
 
-type DuffelPassengerInput = {
-  type: "adult" | "child" | "infant_without_seat";
-  age?: number;
-};
+type DuffelPassengerInput =
+  | { type: "adult" }
+  | { age: number };
+
+/**
+ * Duffel only accepts an `age` for children and infants. Sending a `type`
+ * alongside `age` makes the offer request fail with HTTP 422, so the type is
+ * always derived from the requested age.
+ */
+function buildDuffelPassengers(
+  adults: number,
+  childrenAges: number[],
+  infantAges: number[]
+): DuffelPassengerInput[] {
+  return [
+    ...Array.from({ length: adults }, () => ({ type: "adult" as const })),
+    ...childrenAges.map((age) => ({ age })),
+    ...infantAges.map((age) => ({ age })),
+  ];
+}
 
 export async function POST(request: NextRequest) {
   const token = process.env.DUFFEL_ACCESS_TOKEN;
@@ -110,15 +126,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const duffelPassengers: DuffelPassengerInput[] = [
-    ...Array.from({ length: adults }, () => ({ type: "adult" as const })),
-    ...childrenAges.map((age) => ({ type: "child" as const, age })),
-    ...infantAges.map((age) => ({
-      type: "infant_without_seat" as const,
-      age,
-    })),
-  ];
-
   const allowedCabins = [
     "economy",
     "premium_economy",
@@ -134,19 +141,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const duffelPassengers: DuffelPassengerInput[] = [
-      ...Array.from({ length: adults }, () => ({
-        type: "adult" as const,
-      })),
-      ...childrenAges.map((age) => ({
-        type: "child" as const,
-        age,
-      })),
-      ...infantAges.map((age) => ({
-        type: "infant_without_seat" as const,
-        age,
-      })),
-    ];
+    const duffelPassengers = buildDuffelPassengers(
+      adults,
+      childrenAges,
+      infantAges
+    );
 
     const response = await fetch(
       "https://api.duffel.com/air/offer_requests",
@@ -189,6 +188,10 @@ export async function POST(request: NextRequest) {
         currency: offer.total_currency,
         expiresAt: offer.expires_at,
         owner: offer.owner?.name,
+        // Offers that must be paid immediately cannot be held, so the
+        // booking flow has to create the order with an instant payment.
+        requiresInstantPayment:
+          offer.payment_requirements?.requires_instant_payment === true,
         slices: (offer.slices ?? []).map((slice: any) => ({
           origin: slice.origin?.iata_code,
           destination: slice.destination?.iata_code,
