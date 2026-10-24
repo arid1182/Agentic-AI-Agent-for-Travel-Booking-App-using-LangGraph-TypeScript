@@ -10,6 +10,11 @@ metadata:
     app.kubernetes.io/owner: capclouds.com
 spec:
   replicas: 1
+  strategy:
+    type: rollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: app-flyaway
@@ -19,11 +24,11 @@ spec:
   template:
     metadata:
       name: app-flyaway
-    labels:
-      app.kubernetes.io/name: app-flyaway
-      app.kubernetes.io/instance: next.js
-      app.kubernetes.io/component: app/ui
-      app.kubernetes.io/owner: capclouds.com
+      labels:
+        app.kubernetes.io/name: app-flyaway
+        app.kubernetes.io/instance: next.js
+        app.kubernetes.io/component: app/ui
+        app.kubernetes.io/owner: capclouds.com
     spec:
       securityContext:
         runAsUser: 1000
@@ -35,9 +40,14 @@ spec:
         - name: app-flyaway
           image: dhi.io/arid1182/flyaway:1.10
           ports:
-            containerPort: 3000
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          volumeMounts:
+            - name: volume-flyaway
+              mountPath: /tmp
           envFrom:
-            - configMapref:
+            - configMapRef:
                 name: cf-flyaway
           securityContext:
             runAsNonRoot: true
@@ -83,6 +93,6 @@ spec:
             failureThreshold: 3
             timeoutSeconds: 5
             successThreshold: 1
-    volumes:
-      - name: volume-flyaway
-        emptyDir: {}
+      volumes:
+        - name: volume-flyaway
+          emptyDir: {}
