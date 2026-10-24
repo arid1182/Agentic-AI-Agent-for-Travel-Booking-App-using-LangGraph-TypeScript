@@ -55,22 +55,34 @@ spec:
               cpu: "512m"
           startupProbe:
             httpGet:
-              path: /health
+              path: /api/health
               port: 3000
-            failureThreshold: 3
+              scheme: HTTP
             initialDelaySeconds: 10
             periodSeconds: 5
+            failureThreshold: 10
+            timeoutSeconds: 3
+            successThreshold: 1
           readinessProbe:
             httpGet:
-              path: /health
+              path: /api/health
               port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 10
             failureThreshold: 3
-            initialDelaySeconds: 3
-            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
           livenessProbe:
             httpGet:
-              path: /health
+              path: /api/health
               port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 15
             failureThreshold: 3
-            initialDelaySeconds: 3
-            periodSeconds: 3
+            timeoutSeconds: 5
+            successThreshold: 1
+    volumes:
+      - name: volume-flyaway
+        emptyDir: {}
