@@ -1,1 +1,76 @@
-
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-flyaway
+  namespace: flyaway
+  labels:
+    app.kubernetes.io/name: app-flyaway
+    app.kubernetes.io/instance: next.js
+    app.kubernetes.io/component: app/ui
+    app.kubernetes.io/owner: capclouds.com
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-flyaway
+      app.kubernetes.io/instance: next.js
+      app.kubernetes.io/component: app/ui
+      app.kubernetes.io/owner: capclouds.com
+  template:
+    metadata:
+      name: app-flyaway
+    labels:
+      app.kubernetes.io/name: app-flyaway
+      app.kubernetes.io/instance: next.js
+      app.kubernetes.io/component: app/ui
+      app.kubernetes.io/owner: capclouds.com
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      nodeSelector:
+        kubernetes.io/os: linux
+      containers:
+        - name: app-flyaway
+          image: dhi.io/arid1182/flyaway:1.10
+          ports:
+            containerPort: 3000
+          envFrom:
+            - configMapref:
+                name: cf-flyaway
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "512m"
+            limits:
+              memory: "512Mi"
+              cpu: "512m"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            failureThreshold: 3
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            failureThreshold: 3
+            initialDelaySeconds: 3
+            periodSeconds: 3
