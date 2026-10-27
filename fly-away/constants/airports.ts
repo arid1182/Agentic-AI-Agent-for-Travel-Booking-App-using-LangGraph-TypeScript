@@ -1,61 +1,71 @@
-export const airports = [
+export interface Airport {
+  city: string;
+  code: string;
+  lat: number;
+  lon: number;
+}
+
+export const airports: Airport[] = [
   {
     city: "Kolkata",
-    airport:
-      "Netaji Subhash Chandra Bose",
     code: "CCU",
+    lat: 22.5673,
+    lon: 88.3712,
   },
   {
     city: "Delhi",
-    airport:
-      "Indira Gandhi International",
     code: "DEL",
+    lat: 28.5562,
+    lon: 77.1042,
   },
   {
     city: "Mumbai",
-    airport:
-      "Chhatrapati Shivaji",
     code: "BOM",
+    lat: 19.0896,
+    lon: 72.8656,
   },
   {
     city: "Bangalore",
-    airport:
-      "Kempegowda International",
     code: "BLR",
+    lat: 12.9716,
+    lon: 77.5946,
   },
   {
     city: "Chennai",
-    airport:
-      "Chennai International",
     code: "MAA",
+    lat: 13.0827,
+    lon: 80.2708,
   },
   {
     city: "Hyderabad",
-    airport:
-      "Rajiv Gandhi International",
     code: "HYD",
+    lat: 17.3850,
+    lon: 78.4569,
   },
   {
     city: "Pune",
-    airport:
-      "Pune Airport",
     code: "PNQ",
+    lat: 18.5796,
+    lon: 73.8446,
   },
   {
     city: "Ahmedabad",
-    airport:
-      "Sardar Vallabhbhai Patel",
     code: "AMD",
+    lat: 23.0309,
+    lon: 72.5600,
   },
 
   {
-  city: "London",
-  airport: "Heathrow Airport",
-  code: "LHR",
-},
-{
-  city: "New York",
-  airport: "John F. Kennedy International",
-  code: "JFK",
-},
+    city: "London",
+    code: "LHR",
+    lat: 51.4700,
+    lon: -0.4543,
+  },
+
+  {
+    city: "New York",
+    code: "JFK",
+    lat: 40.6413,
+    lon: -73.7781,
+  },
 ];
