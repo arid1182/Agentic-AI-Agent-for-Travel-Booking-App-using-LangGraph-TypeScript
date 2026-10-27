@@ -38,7 +38,8 @@ spec:
         kubernetes.io/os: linux
       containers:
         - name: app-flyaway
-          image: dhi.io/arid1182/flyaway:1.10
+          image: arid1182/flyaway:1.2.0
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 3000

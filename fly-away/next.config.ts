@@ -45,6 +45,7 @@ const withPWA = withPWAInit({
 // 2. Define your standard Next.js configurations
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  output: "standalone",
 
   // This small block signals to Next.js that you're using custom Webpack
   // features, preventing Turbopack from running and crashing the production build.
