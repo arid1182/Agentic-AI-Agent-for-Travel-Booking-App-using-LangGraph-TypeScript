@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-flyaway
+  namespace: flyaway
+  labels:
+    app.kubernetes.io/name: app-flyaway
+    app.kubernetes.io/instance: next.js
+    app.kubernetes.io/component: app/ui
+    app.kubernetes.io/owner: capclouds.com
+spec:
+  replicas: 1
+  strategy:
+    type: rollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: app-flyaway
+      app.kubernetes.io/instance: next.js
+      app.kubernetes.io/component: app/ui
+      app.kubernetes.io/owner: capclouds.com
+  template:
+    metadata:
+      name: app-flyaway
+      labels:
+        app.kubernetes.io/name: app-flyaway
+        app.kubernetes.io/instance: next.js
+        app.kubernetes.io/component: app/ui
+        app.kubernetes.io/owner: capclouds.com
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      nodeSelector:
+        kubernetes.io/os: linux
+      containers:
+        - name: app-flyaway
+          image: dhi.io/arid1182/flyaway:1.10
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          volumeMounts:
+            - name: volume-flyaway
+              mountPath: /tmp
+          envFrom:
+            - configMapRef:
+                name: cf-flyaway
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "512m"
+            limits:
+              memory: "512Mi"
+              cpu: "512m"
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 3
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 15
+            failureThreshold: 3
+            timeoutSeconds: 5
+            successThreshold: 1
+      volumes:
+        - name: volume-flyaway
+          emptyDir: {}
