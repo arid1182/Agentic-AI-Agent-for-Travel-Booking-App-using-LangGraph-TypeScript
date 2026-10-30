@@ -15,7 +15,7 @@ az aks create \
     --network-plugin azure \
     --network-plugin-mode overlay \
     --network-policy azure \
-    --vnet-subnet-id "/subscriptions/917502bc-868d-4be8-ad09-68d765b05516/resourceGroups/rg-flyaway/providers/Microsoft.Network/virtualNetworks/vnet-aks-prod/subnets/snet-aks-prod" \
+    --vnet-subnet-id "/subscriptions/subscription-id/resourceGroups/.../vnet-aks-prod/subnets/snet-aks-prod" \
     --pod-cidr "$POD_CIDR" \
     --service-cidr "$SERVICE_CIDR" \
     --dns-service-ip "$DNS_SERVICE_IP" \
