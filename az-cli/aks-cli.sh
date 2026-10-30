@@ -15,17 +15,17 @@ az aks create \
     --network-plugin azure \
     --network-plugin-mode overlay \
     --network-policy azure \
-    --vnet-subnet-id "/subscriptions/subscription-id/resourceGroups/.../vnet-aks-prod/subnets/snet-aks-prod" \
+    --vnet-subnet-id "/subscriptions/917502bc-868d-4be8-ad09-68d765b05516/resourceGroups/rg-flyaway/providers/Microsoft.Network/virtualNetworks/vnet-aks-prod/subnets/snet-aks-prod" \
     --pod-cidr "$POD_CIDR" \
     --service-cidr "$SERVICE_CIDR" \
     --dns-service-ip "$DNS_SERVICE_IP" \
-    --outbound-type userDefinedRouting \
+    --outbound-type loadBalancer \
     \
     --node-vm-size "$SYSTEM_NODE_SIZE" \
     --node-count "$SYSTEM_NODE_COUNT" \
     --nodepool-name systempool \
-    --os-disk-size-gb 30 \
-    --os-disk-type Managed \
+    --node-osdisk-size 64 \
+    --node-osdisk-type Managed \
     \
     --enable-cluster-autoscaler \
     --min-count 1 \

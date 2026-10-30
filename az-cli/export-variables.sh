@@ -22,9 +22,9 @@ export DNS_PREFIX="aks-prod-flyaway"
 export NETWORK_PLUGIN="azure"
 export NETWORK_PLUGIN_MODE="overlay"
 
-export SYSTEM_NODE_SIZE="Standard_B2s_v2"
+export SYSTEM_NODE_SIZE="Standard_B2s"
 export SYSTEM_NODE_COUNT=1
-export WORKER_NODE_SIZE="Standard_B2s_v2"
+export WORKER_NODE_SIZE="Standard_B2s"
 export WORKER_MIN_COUNT=1
 export WORKER_MAX_COUNT=2
 
