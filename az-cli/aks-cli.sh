@@ -42,9 +42,10 @@ az aks create \
     # Enable private cluster
     --enable-private-cluster \
     --private-dns-zone system \
-
+    \
     --enable-addons azure-keyvault-secrets-provider \
-
+    --enable-secret-rotation \
+    \
     # Enable API server authorized IP ranges (required for public type AKS cluster access)
     # --api-server-authorized-ip-ranges "<MY_PUBLIC_IP>/32"
     \
