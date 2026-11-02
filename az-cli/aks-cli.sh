@@ -24,7 +24,7 @@ az aks create \
     --node-vm-size "$SYSTEM_NODE_SIZE" \
     --node-count "$SYSTEM_NODE_COUNT" \
     --nodepool-name systempool \
-    --node-osdisk-size 64 \
+    --node-osdisk-size 32 \
     --node-osdisk-type Managed \
     \
     --enable-cluster-autoscaler \
@@ -39,8 +39,14 @@ az aks create \
     --auto-upgrade-channel patch \
     --node-os-upgrade-channel NodeImage \
     \
+    # Enable private cluster
     --enable-private-cluster \
     --private-dns-zone system \
+
+    --enable-addons azure-keyvault-secrets-provider \
+
+    # Enable API server authorized IP ranges (required for public type AKS cluster access)
+    # --api-server-authorized-ip-ranges "<MY_PUBLIC_IP>/32"
     \
     --tags \
         environment=production \
