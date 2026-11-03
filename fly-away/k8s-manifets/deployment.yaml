@@ -1,34 +1,34 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app-flyaway
-  namespace: flyaway
+  name: appflyaway
+  namespace: flyaway-namespace
   labels:
     azure.workload.identity/use: "true"
-    app.kubernetes.io/name: app-flyaway
-    app.kubernetes.io/instance: next.js
-    app.kubernetes.io/component: app/ui
+    app.kubernetes.io/name: appflyaway
+    app.kubernetes.io/instance: nextjs
+    app.kubernetes.io/component: app_ui
     app.kubernetes.io/owner: capclouds.com
 spec:
   replicas: 1
   strategy:
-    type: rollingUpdate
+    type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0
       maxSurge: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: app-flyaway
-      app.kubernetes.io/instance: next.js
-      app.kubernetes.io/component: app/ui
+      app.kubernetes.io/name: appflyaway
+      app.kubernetes.io/instance: nextjs
+      app.kubernetes.io/component: app_ui
       app.kubernetes.io/owner: capclouds.com
   template:
     metadata:
       name: app-flyaway
       labels:
-        app.kubernetes.io/name: app-flyaway
-        app.kubernetes.io/instance: next.js
-        app.kubernetes.io/component: app/ui
+        app.kubernetes.io/name: appflyaway
+        app.kubernetes.io/instance: nextjs
+        app.kubernetes.io/component: app_ui
         app.kubernetes.io/owner: capclouds.com
     spec:
       serviceAccountName: flyaway-sa
@@ -46,6 +46,9 @@ spec:
             - name: http
               containerPort: 3000
               protocol: TCP
+          envFrom:
+            - secretRef:
+                name: flyaway-secrets
           volumeMounts:
             - name: secret-store-flyaway
               mountPath: /app/.env.local
