@@ -26,6 +26,7 @@ spec:
     metadata:
       name: app-flyaway
       labels:
+        azure.workload.identity/use: "true"
         app.kubernetes.io/name: appflyaway
         app.kubernetes.io/instance: nextjs
         app.kubernetes.io/component: app_ui
@@ -51,8 +52,7 @@ spec:
                 name: flyaway-secrets
           volumeMounts:
             - name: secret-store-flyaway
-              mountPath: /app/.env.local
-              subPath: .env.local
+              mountPath: /mnt/secrets-store
               readOnly: true
           securityContext:
             runAsNonRoot: true
