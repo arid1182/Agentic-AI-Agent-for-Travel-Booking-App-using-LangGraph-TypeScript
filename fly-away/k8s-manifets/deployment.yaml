@@ -4,6 +4,7 @@ metadata:
   name: app-flyaway
   namespace: flyaway
   labels:
+    azure.workload.identity/use: "true"
     app.kubernetes.io/name: app-flyaway
     app.kubernetes.io/instance: next.js
     app.kubernetes.io/component: app/ui
@@ -30,6 +31,7 @@ spec:
         app.kubernetes.io/component: app/ui
         app.kubernetes.io/owner: capclouds.com
     spec:
+      serviceAccountName: flyaway-sa
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -45,11 +47,10 @@ spec:
               containerPort: 3000
               protocol: TCP
           volumeMounts:
-            - name: volume-flyaway
-              mountPath: /tmp
-          envFrom:
-            - configMapRef:
-                name: cf-flyaway
+            - name: secret-store-flyaway
+              mountPath: /app/.env.local
+              subPath: .env.local
+              readOnly: true
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
@@ -97,3 +98,9 @@ spec:
       volumes:
         - name: volume-flyaway
           emptyDir: {}
+        - name: secret-store-flyaway
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "flyaway-sp-class"
