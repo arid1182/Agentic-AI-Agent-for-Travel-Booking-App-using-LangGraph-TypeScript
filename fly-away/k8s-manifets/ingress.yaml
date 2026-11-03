@@ -10,4 +10,8 @@ spec:
       port: 80
       targetPort: 3000 
   selector:
-    app: appflyaway
+      app.kubernetes.io/name: appflyaway
+      app.kubernetes.io/instance: nextjs
+      app.kubernetes.io/component: app_ui
+      app.kubernetes.io/owner: capclouds.com
+  
