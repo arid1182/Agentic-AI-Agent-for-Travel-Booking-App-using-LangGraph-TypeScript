@@ -9,8 +9,11 @@ az identity create -g $RESOURCE_GROUP -n kv-reader-identity
 CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n kv-reader-identity --query clientId -o tsv)
 PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n kv-reader-identity --query principalId -o tsv)
 
+# Retirve the Key Vault Name
+Key_Vault_Name=$(az keyvault list --resource-group $RESOURCE_GROUP --query "[?starts_with(name, 'kv-aks-flyaway-')].name" -o tsv)
+
 # Assign the role on the Key Vault
-Key_Vault_ID=$(az keyvault show -n kv-aks-flyaway-20698 --query id -o tsv)
+Key_Vault_ID=$(az keyvault show -n $Key_Vault_Name --query id -o tsv)
 az role assignment create \
   --assignee-object-id $PRINCIPAL_ID \
   --assignee-principal-type ServicePrincipal \
@@ -25,4 +28,3 @@ az identity federated-credential create \
   --issuer $OIDC_ISSUER \
   --subject system:serviceaccount:default:flyaway-sa \
   --audience api://AzureADTokenExchange
- 
