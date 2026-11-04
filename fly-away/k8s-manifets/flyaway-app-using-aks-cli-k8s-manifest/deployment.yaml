@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appflyaway
+  labels:
+    azure.workload.identity/use: "true"
+    app.kubernetes.io/name: appflyaway
+    app.kubernetes.io/instance: nextjs
+    app.kubernetes.io/component: app_ui
+    app.kubernetes.io/owner: capclouds.com
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: appflyaway
+      app.kubernetes.io/instance: nextjs
+      app.kubernetes.io/component: app_ui
+      app.kubernetes.io/owner: capclouds.com
+  template:
+    metadata:
+      name: app-flyaway
+      labels:
+        azure.workload.identity/use: "true"
+        app.kubernetes.io/name: appflyaway
+        app.kubernetes.io/instance: nextjs
+        app.kubernetes.io/component: app_ui
+        app.kubernetes.io/owner: capclouds.com
+    spec:
+      serviceAccountName: flyaway-sa
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      nodeSelector:
+        kubernetes.io/os: linux
+      containers:
+        - name: app-flyaway
+          image: arid1182/flyaway:1.2.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: flyaway-secrets
+          volumeMounts:
+            - name: secret-store-flyaway
+              mountPath: /mnt/secrets-store
+              readOnly: true
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "512m"
+            limits:
+              memory: "512Mi"
+              cpu: "512m"
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 3
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 15
+            failureThreshold: 3
+            timeoutSeconds: 5
+            successThreshold: 1
+      volumes:
+        - name: volume-flyaway
+          emptyDir: {}
+        - name: secret-store-flyaway
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "flyaway-sp-class"

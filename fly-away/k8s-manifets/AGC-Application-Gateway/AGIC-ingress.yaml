@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: appflyaway-ingress
+  annotations:
+    # WAF configuration
+    application-gateway.ingress.kubernetes.io/waf-mode: "Prevention"
+    application-gateway.ingress.kubernetes.io/waf-configuration: |
+      {
+        "type": "OWASP",
+            "rule-set-type": "3.1",
+            "crs-mode": "Detection",
+            "crs-security-level": "1",
+            "scoring-mode": "Disabled"
+      }
+    # SSL Proxy configuration
+    application-gateway.ingress.kubernetes.io/ssl-redirect: "true"
+    application-gateway.ingress.kubernetes.io/backend-http-settings-cookie-enabled: "false"
+    application-gateway.ingress.kubernetes.io/backend-http-settings-probe-probe-timeout: "300"
+    application-gateway.ingress.kubernetes.io/backend-http-settings-probe-path: "/api/health"
+    application-gateway.ingress.kubernetes.io/backend-http-settings-probe-interval: "5"
+    application-gateway.ingress.kubernetes.io/backend-http-settings-probe-route: "/api/health"
+    # Health path must match the container probe path
+    nginx.ingress.kubernetes.io/upstream-variables: "request.body=;"
+    # Route to the service
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+spec:
+  ingressClassName: "azure"
+  rules:
+    - host: flyaway.capclouds.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: appflyaway-ingress-service
+                port:
+                  number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: appflyaway-ingress-service
+                port:
+                  number: 80
