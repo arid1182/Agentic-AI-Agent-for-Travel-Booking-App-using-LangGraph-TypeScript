@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
+# Create AKS Cluster (Production Grade)
 az aks create \
   --resource-group "$RESOURCE_GROUP" \
   --name "$CLUSTER_NAME" \
@@ -69,3 +70,9 @@ az aks nodepool add \
   --tags \
       environment=production \
       owner=capclouds.com
+
+# Get Credentials
+az aks get-credentials \
+  --resource-group $RESOURCE_GROUP \
+  --name $CLUSTER_NAME \
+  --overwrite-existing
