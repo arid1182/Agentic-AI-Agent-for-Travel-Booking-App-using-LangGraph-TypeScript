@@ -122,9 +122,8 @@ The cluster is running and the application pods are operational:
 
 | Resource | Status |
 |----------|--------|
-| **Pods** | `appflyaway-bb9f99446-jgdpv` — **Running** (1/1 ready, 0 restarts, 30m ago) |
-| **Services** | `appflyaway-ingress-service` — ClusterIP `10.245.77.228`, Port 80/TCP (31m ago) |
-| **Endpoints** | `appflyaway-ingress-service` — `10.244.1.118:3000` (31m ago) |
-| **Cluster** | Kubernetes v1.33+ (deprecated v1 Endpoints, using EndpointSlice) |
+| **Pods** | `appflyaway-bb9f99446-jgdpv` — **Running** (1/1 ready, 0 restarts) |
+| **Services** | `appflyaway-ingress-service` — ClusterIP `10.245.77.228`, Port 80/TCP |
+| **Endpoints** | `appflyaway-ingress-service` — `10.244.1.118:3000` |
 
 This directory contains the Kubernetes manifest files for deploying the FlyAway application on AKS (Azure Kubernetes Service).
