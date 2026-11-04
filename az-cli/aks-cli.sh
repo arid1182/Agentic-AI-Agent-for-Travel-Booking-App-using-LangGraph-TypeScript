@@ -43,6 +43,8 @@ az aks create \
   \
   --enable-addons azure-keyvault-secrets-provider \
   --enable-secret-rotation \
+  
+  # ALB Controller add-on
   --enable-gateway-api \
   --enable-application-load-balancer \
   \
