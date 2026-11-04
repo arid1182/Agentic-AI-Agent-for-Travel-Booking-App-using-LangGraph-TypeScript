@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: appflyaway
-  namespace: flyaway-namespace
   labels:
     azure.workload.identity/use: "true"
     app.kubernetes.io/name: appflyaway
