@@ -31,3 +31,4 @@ export WORKER_MAX_COUNT=2
 export ACR_NAME="acrflyawayprod$RANDOM"
 export LOG_WORKSPACE="law-aks-prod-flyaway"
 export KEY_VAULT_NAME="kv-aks-flyaway-$RANDOM"
+export WAF_POLICY_NAME="flyaway-waf-policy"
