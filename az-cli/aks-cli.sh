@@ -22,6 +22,7 @@ az aks create \
   --service-cidr "$SERVICE_CIDR" \
   --dns-service-ip "$DNS_SERVICE_IP" \
   --outbound-type loadBalancer \
+  --generate-ssh-keys \
   \
   --node-vm-size "$SYSTEM_NODE_SIZE" \
   --node-count "$SYSTEM_NODE_COUNT" \
@@ -43,8 +44,6 @@ az aks create \
   \
   --enable-addons azure-keyvault-secrets-provider \
   --enable-secret-rotation \
-  
-  # ALB Controller add-on
   --enable-gateway-api \
   --enable-application-load-balancer \
   \
