@@ -78,3 +78,18 @@ ALB_SUBNET_ID=$(az network vnet subnet show \
     --query id -o tsv)
 
 echo "$ALB_SUBNET_ID"
+
+SUBNET_ID=$(az network vnet subnet show \
+    --resource-group rg-flyaway \
+    --vnet-name vnet-aks-prod \
+    --name snet-agc \
+    --query id -o tsv)
+
+# grant the Network Contributor role to the ALB controller's service principal on the subnet
+az role assignment create \
+    --assignee-object-id 68cef9c2-6e3d-4eca-a38f-cd9f78759e2b \
+    --assignee-principal-type ServicePrincipal \
+    --role "Network Contributor" \
+    --scope "$SUBNET_ID"
+
+kubectl rollout restart deployment alb-controller -n kube-system

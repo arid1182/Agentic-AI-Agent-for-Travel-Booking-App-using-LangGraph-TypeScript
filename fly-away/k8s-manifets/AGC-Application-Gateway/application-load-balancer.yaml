@@ -5,4 +5,4 @@ metadata:
   namespace: alb-infra
 spec:
   associations:
-    - ${ALB_SUBNET_ID}
+    - /subscriptions/917502bc-868d-4be8-ad09-68d765b05516/resourceGroups/rg-flyaway/providers/Microsoft.Network/virtualNetworks/vnet-aks-prod/subnets/snet-agc
