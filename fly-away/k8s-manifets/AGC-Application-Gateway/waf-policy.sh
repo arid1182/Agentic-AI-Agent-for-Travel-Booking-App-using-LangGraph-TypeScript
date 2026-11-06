@@ -1,5 +1,6 @@
-!#/bin/bash
+#!/bin/bash
 set -euo pipefail
+
 
 WAF_POLICY_NAME="flyaway-waf-policy"
 
