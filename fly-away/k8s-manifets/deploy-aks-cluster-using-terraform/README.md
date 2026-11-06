@@ -1,4 +1,4 @@
-# Production-grade AKS Terraform platform
+# Production-grade AKS Terraform
 
 Three-layer module layout: **network** -> **monitoring** -> **aks** (+ optional ACR).
 
@@ -50,7 +50,7 @@ Three-layer module layout: **network** -> **monitoring** -> **aks** (+ optional 
 ## Usage
 
 ```bash
-cp terraform.tfvars.example terraform.tfvars   # fill in
+terraform.tfvars   # fill in
 terraform init
 terraform plan -out=tfplan
 terraform apply tfplan

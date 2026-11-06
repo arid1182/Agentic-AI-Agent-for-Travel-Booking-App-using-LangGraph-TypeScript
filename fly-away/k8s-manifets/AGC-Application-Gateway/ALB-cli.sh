@@ -61,7 +61,7 @@ echo "$VNET_RESOURCE_GROUP"
 
 # Create the dedicated subnet
 ALB_SUBNET_NAME="snet-agc"
-ALB_SUBNET_PREFIX="10.241.128.0/24"
+ALB_SUBNET_PREFIX="10.242.0.0/24"
 
 az network vnet subnet create \
     --resource-group "$VNET_RESOURCE_GROUP" \

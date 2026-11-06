@@ -12,7 +12,6 @@ az aks create \
   --enable-managed-identity \
   --enable-oidc-issuer \
   --enable-workload-identity \
-  --no-wait \
   \
   --network-plugin azure \
   --network-plugin-mode overlay \
