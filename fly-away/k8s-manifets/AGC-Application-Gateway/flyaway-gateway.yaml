@@ -1,38 +1,32 @@
 apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
+kind: Gateway
 metadata:
-  name: flyaway-http-redirect
+  name: flyaway-gateway
   namespace: default
+  annotations:
+    alb.networking.azure.io/alb-namespace: alb-infra
+    alb.networking.azure.io/alb-name: flyaway-alb
 spec:
-  parentRefs:
-    - name: flyaway-gateway
-      sectionName: http-listener
-  hostnames:
-    - flyaway.capclouds.com
-  rules:
-    - filters:
-        - type: RequestRedirect
-          requestRedirect:
-            scheme: https
-            statusCode: 301
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: flyaway-https-route
-  namespace: default
-spec:
-  parentRefs:
-    - name: flyaway-gateway
-      sectionName: https-listener
-  hostnames:
-    - flyaway.capclouds.com
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - name: appflyaway-ingress-service
-          port: 80
-          weight: 1
+  gatewayClassName: azure-alb-external
+  listeners:
+    - name: http-listener
+      hostname: flyaway.capclouds.com
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Same
+
+    - name: https-listener
+      hostname: flyaway.capclouds.com
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            group: ""
+            name: flyaway-tls
+      allowedRoutes:
+        namespaces:
+          from: Same

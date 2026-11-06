@@ -84,10 +84,11 @@ SUBNET_ID=$(az network vnet subnet show \
     --vnet-name vnet-aks-prod \
     --name snet-agc \
     --query id -o tsv)
+echo $SUBNET_ID
 
 # grant the Network Contributor role to the ALB controller's service principal on the subnet
 az role assignment create \
-    --assignee-object-id 5a1b0184-e8ef-424a-84a9-fc250ffdc7a6  \
+    --assignee-object-id a64682d2-8ed0-43d2-b8fb-3379d7ac6982  \
     --assignee-principal-type ServicePrincipal \
     --role "Network Contributor" \
     --scope "$SUBNET_ID"

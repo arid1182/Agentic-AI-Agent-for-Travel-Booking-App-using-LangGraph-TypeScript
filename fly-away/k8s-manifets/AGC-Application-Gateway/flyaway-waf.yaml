@@ -1,0 +1,13 @@
+apiVersion: alb.networking.azure.io/v1
+kind: WebApplicationFirewallPolicy
+metadata:
+  name: flyaway-waf
+  namespace: default
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: flyaway-gateway
+    namespace: default
+  webApplicationFirewall:
+    id: "/subscriptions/917502bc-868d-4be8-ad09-68d765b05516/resourceGroups/rg-flyaway/providers/Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies/flyaway-waf-policy"
