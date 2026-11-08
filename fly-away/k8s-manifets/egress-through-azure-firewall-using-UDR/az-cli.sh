@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eua pipefail
+set -euo pipefail
 
 echo "-----------------------------------------------------------"
 echo "Step 1 - Create a Virtual Network for AKS and Azure Firewall"
