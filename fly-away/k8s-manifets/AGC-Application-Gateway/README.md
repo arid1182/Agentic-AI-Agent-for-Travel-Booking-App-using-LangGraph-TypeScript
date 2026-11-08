@@ -7,6 +7,12 @@ The system relies directly on an ALB Controller (Application Load Balancer Contr
 
 ![Alternative Text](AGC-Data%20Plane.webp)
 
+### Step 1 – Export the Azure Cli environment variable in local environment
+
+```
+#!/bin/bash
+source export-variables.sh
+```
 ### Step 1 – Install ALB Controller using the AKS add-on
 
 ```
