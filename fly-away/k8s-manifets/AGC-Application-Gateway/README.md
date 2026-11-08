@@ -6,7 +6,7 @@ The system relies directly on an ALB Controller (Application Load Balancer Contr
 
 ## Images
 
-![Alternative Text](AGC-Data Plane.webp)
+![Alternative Text](AGC-Data%20Plane.webp)
 
 ### Step 1 – Install ALB Controller using the AKS add-on
 ## Blocks of code
