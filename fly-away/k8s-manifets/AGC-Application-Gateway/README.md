@@ -4,14 +4,17 @@ Azure Application Gateway for Containers is a managed Layer 7 load balancing and
 
 The system relies directly on an ALB Controller (Application Load Balancer Controller), which is an in-cluster operator that translates Kubernetes-native configuration into Azure load-balancing rules
 
-## Steps:
+## Images
+
+![This is an alt text.](/image/Markdown-mark.svg "This is a sample image.")
 
 ### Step 1 – Install ALB Controller using the AKS add-on
+## Blocks of code
 
-* Item 1
-* Item 2
-* Item 2a
-* Item 2b
+```
+let message = 'Hello world';
+alert(message);
+```
 
 ### Step 2 – Create AGC managed by ALB Controller
 ### Step 3 – Configure HTTPS / TLS offloading
