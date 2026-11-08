@@ -6,7 +6,7 @@ The system relies directly on an ALB Controller (Application Load Balancer Contr
 
 ## Images
 
-![This is an alt text.](/image/Markdown-mark.svg "This is a sample image.")
+![This is an alt text.](/AGC-Data Plane.webp "This is a sample image.")
 
 ### Step 1 – Install ALB Controller using the AKS add-on
 ## Blocks of code
