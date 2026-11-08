@@ -67,38 +67,65 @@ kubectl apply -f flyaway-waf.yaml
 
 ```
 ### Final Ingress Architecture Architecture 
+This diagram shows the external request path into the FlyAway application on AKS and the services it depends on.
 
+## Architecture
 
 ```mermaid
-flowchart TD
+flowchart TB
     DNS["Cloudflare DNS<br/>flyaway.capclouds.com"]
-    AGC["Azure Application Gateway for Containers<br/>Public frontend · TLS termination · WAF"]
-    GW["Gateway API<br/>Gateway · HTTPRoute · WebApplicationFirewallPolicy"]
-    SVC["Kubernetes Service<br/>ClusterIP · Port 80"]
-    APP["FlyAway Next.js application<br/>Container · Port 3000"]
+    AGC["Azure Application Gateway for Containers<br/>Public endpoint · TLS · WAF"]
+    GW["Gateway API<br/>Gateway · HTTPRoute · WAF policy"]
+    SVC["Kubernetes Service<br/>ClusterIP · 80"]
+    APP["FlyAway Next.js application<br/>Container · 3000"]
 
-    DNS --> AGC
-    AGC --> GW
-    GW --> SVC
-    SVC --> APP
+    DNS --> AGC --> GW --> SVC --> APP
 
-    subgraph DEPS["Separate application dependencies"]
-        KV["Azure Key Vault / CSI Driver<br/>Secrets"]
+    subgraph DEPS["Application dependencies"]
+        direction LR
+        KV["Azure Key Vault<br/>Secrets Store CSI Driver"]
         DB["Supabase<br/>Database"]
         DUFFEL["Duffel API<br/>Flight booking"]
     end
 
-    APP -. "Mounts secrets" .-> KV
-    APP -. "Database access" .-> DB
-    APP -. "Flight search / booking" .-> DUFFEL
+    APP -.-> KV
+    APP -.-> DB
+    APP -.-> DUFFEL
 
-    classDef ingress fill:#07111f,stroke:#263449,color:#f1f5f9
-    classDef gateway fill:#031b14,stroke:#14532d,color:#f1f5f9
-    classDef dependency fill:#171717,stroke:#404040,color:#f1f5f9
+    classDef edge fill:#07111f,stroke:#263449,color:#f1f5f9,stroke-width:1.5px
+    classDef internal fill:#031b14,stroke:#14532d,color:#f1f5f9,stroke-width:1.5px
+    classDef dependency fill:#171717,stroke:#404040,color:#f1f5f9,stroke-width:1.5px
 
-    class DNS,AGC ingress
-    class GW,SVC,APP gateway
+    class DNS,AGC edge
+    class GW,SVC,APP internal
     class KV,DB,DUFFEL dependency
+
+    linkStyle 0,1,2,3 stroke:#a3a3a3,stroke-width:1.5px
 ```
 
+## Traffic flow
 
+1. **Cloudflare DNS** resolves `flyaway.capclouds.com` to the public AGC frontend.
+2. **Azure Application Gateway for Containers (AGC)** provides the public entry point, TLS termination, and WAF protection.
+3. **Gateway API** resources define the listener and routing:
+   - `Gateway` defines the gateway listener.
+   - `HTTPRoute` matches the hostname and forwards requests to the Kubernetes Service.
+   - The WAF policy configures the applicable WAF protection.
+4. **Kubernetes Service** exposes FlyAway internally using `ClusterIP` on port `80`.
+5. **FlyAway Next.js** receives the forwarded traffic on container port `3000`.
+
+## Application dependencies
+
+- **Azure Key Vault + Secrets Store CSI Driver** – provides configured secrets to the AKS workload through the `SecretProviderClass` integration.
+- **Supabase** – provides database services.
+- **Duffel API** – supports flight search and booking.
+
+The dotted connections represent application integrations; they are not additional inbound ingress hops.
+
+## Ports
+
+| Component | Port | Purpose |
+|---|---:|---|
+| AGC | 443 | Public HTTPS listener |
+| Kubernetes Service | 80 | Internal service port |
+| FlyAway container | 3000 | Next.js application port |
