@@ -2,7 +2,7 @@
 set -eua pipefail
 
 echo "-----------------------------------------------------------"
-echo "Step 1 - Create a Virtual Network for AKS and Azure Firewal"
+echo "Step 1 - Create a Virtual Network for AKS and Azure Firewall"
 echo "-----------------------------------------------------------"
 
 az group create --name $RESOURCE_GROUP --location $LOCATION
