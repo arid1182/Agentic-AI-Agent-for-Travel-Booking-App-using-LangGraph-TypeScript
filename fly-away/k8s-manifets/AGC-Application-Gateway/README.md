@@ -37,7 +37,6 @@ bash ALB-cli.sh
 ```
 kubectl apply -f service-account.yaml
 kubectl apply -f secretProviderClass.yaml
-kubectl apply -f secretProviderClass.yaml
 kubectl apply -f deployment.yaml
 kubectl apply -f clusterIP-service.yaml
 ```
