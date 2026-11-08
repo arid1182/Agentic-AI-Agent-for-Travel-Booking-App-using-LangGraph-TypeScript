@@ -13,6 +13,41 @@ The system relies directly on an ALB Controller (Application Load Balancer Contr
 #!/bin/bash
 source export-variables.sh
 ```
+
+### Step 2 – Create AKS Cluster using azure cli 
+
+```
+#!/bin/bash
+bash aks-cli.sh
+```
+### Step 3 – Create a Managed Identity with role assignment "Key Vault Secret User"
+
+```
+#!/bin/bash
+bash managed-identity.sh
+```
+### Step 4 – Install Application Load Balancer controller per-requisities 
+
+```
+#!/bin/bash
+bash ALB-cli.sh
+```
+### Step 5 – Deploy the flyaway application
+
+```
+#!/bin/bash
+kubectl apply -f service-account.yaml
+kubectl apply -f secretProviderClass.yaml
+kubectl apply -f secretProviderClass.yaml
+kubectl apply -f deployment.yaml
+```
+
+
+
+
+
+
+
 ### Step 1 – Install ALB Controller using the AKS add-on
 
 ```
