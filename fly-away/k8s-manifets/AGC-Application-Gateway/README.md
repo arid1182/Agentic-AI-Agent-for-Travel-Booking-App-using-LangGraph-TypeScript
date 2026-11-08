@@ -66,5 +66,39 @@ bash waf-policy.sh
 kubectl apply -f flyaway-waf.yaml
 
 ```
+### Final Ingress Architecture Architecture 
+
+
+```mermaid
+flowchart TD
+    DNS["Cloudflare DNS<br/>flyaway.capclouds.com"]
+    AGC["Azure Application Gateway for Containers<br/>Public frontend · TLS termination · WAF"]
+    GW["Gateway API<br/>Gateway · HTTPRoute · WebApplicationFirewallPolicy"]
+    SVC["Kubernetes Service<br/>ClusterIP · Port 80"]
+    APP["FlyAway Next.js application<br/>Container · Port 3000"]
+
+    DNS --> AGC
+    AGC --> GW
+    GW --> SVC
+    SVC --> APP
+
+    subgraph DEPS["Separate application dependencies"]
+        KV["Azure Key Vault / CSI Driver<br/>Secrets"]
+        DB["Supabase<br/>Database"]
+        DUFFEL["Duffel API<br/>Flight booking"]
+    end
+
+    APP -. "Mounts secrets" .-> KV
+    APP -. "Database access" .-> DB
+    APP -. "Flight search / booking" .-> DUFFEL
+
+    classDef ingress fill:#07111f,stroke:#263449,color:#f1f5f9
+    classDef gateway fill:#031b14,stroke:#14532d,color:#f1f5f9
+    classDef dependency fill:#171717,stroke:#404040,color:#f1f5f9
+
+    class DNS,AGC ingress
+    class GW,SVC,APP gateway
+    class KV,DB,DUFFEL dependency
+```
 
 
