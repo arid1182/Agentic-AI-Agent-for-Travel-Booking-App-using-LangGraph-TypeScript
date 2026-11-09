@@ -69,3 +69,8 @@ az aks get-credentials -g rg-plat-prod-aks -n aks-plat-prod --overwrite-existing
 - **Breaking-change safety**: the default node pool uses `temporary_name_for_rotation`,
   so future SKU changes recreate the pool gracefully instead of forcing replacement.
 - **Maintenance windows** use `utc_offset = "+01:00"` (CET/CEST); adjust to your region.
+
+
+# Create AKS Resource using Terraform
+
+> 🚀 **Live Case Study:** Read the full project breakdown and architecture overview on my [Portfolio Website](https://capclouds.com/portfolio-archive/azure-kubernetes-service-aks-cluster-using-terraform/).
