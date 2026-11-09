@@ -15,7 +15,7 @@ source export-variables.sh
 
 ```
 #!/bin/bash
-bash az-cli.sh
+bash egress-az-cli.sh
 ```
 ### Create the AKS Cluster
 ```
