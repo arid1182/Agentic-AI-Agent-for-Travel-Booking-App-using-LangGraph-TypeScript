@@ -15,10 +15,10 @@ terraform {
 
     # Remote tfstate file
     backend "azurerm" {
-        resource_group_name = "rg-flyaway"
+        resource_group_name = "rg-prod-flyaway"
         storage_account_name = "tfsate-prod-flyaway"
         container_name = "flyaway-cluster-manager"
-        key = "flyaway-prod-terraform.tfstate"
+        key = "flyaway-prod.tfstate"
         use_oid = true
         use_azuread_auth = true
     }

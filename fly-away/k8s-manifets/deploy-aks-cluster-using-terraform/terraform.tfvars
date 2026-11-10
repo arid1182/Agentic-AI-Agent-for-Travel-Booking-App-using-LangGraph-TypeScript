@@ -30,15 +30,26 @@ api_server_authorized_ip_ranges = ["154.57.209.206/32", "58.65.160.53/32"] # onl
 
 user_node_pools = {
     apps = {
-        vm_size   = "Standard_D8s_v5"
-        min_count = 3
-        max_count = 30
+        vm_size   = "Standard_B2s"
+        min_count = 1
+        max_count = 2
         node_labels = { workload = "apps" }
+        zones = ["1"]
     }
     gpu = {
         vm_size     = "Standard_NC8as_T4_v3"
         min_count   = 0
         max_count   = 5
         node_taints = ["nvidia.com/gpu=true:NoSchedule"]
+    }
+}
+
+system_node_pool = {
+    api-server = {
+        vm_size   = "Standard_B2s"
+        min_count = 1
+        max_count = 2
+        os_disk_size_gb = 30
+        node_labels = { workload = "api-server" }
     }
 }

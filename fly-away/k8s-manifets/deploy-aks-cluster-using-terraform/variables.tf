@@ -69,7 +69,7 @@ variable "vnet_address_space" {
 }
 
 variable "kubernetes_version" {
-    description = "Kubernetes version prefix, e.g. "1.34"."
+    description = "Kubernetes version prefix, e.g. 1.34."
     type        = string
     default     = null
 }
@@ -147,17 +147,17 @@ variable "system_node_pool" {
     description = "System node pool configuration."
     type = object({
         vm_size          = optional(string, "Standard_D4s_v5")
-        min_count        = optional(number, 3)
-        max_count        = optional(number, 6)
+        min_count        = optional(number, 1)
+        max_count        = optional(number, 2)
         max_pods         = optional(number, 250)
-        os_disk_size_gb  = optional(number, null) # null auto-sizes; ephemeral disks need size <= VM cache
+        os_disk_size_gb  = optional(number, 30) # null auto-sizes; ephemeral disks need size <= VM cache
         os_sku           = optional(string, "AzureLinux")
     })
     default = {}
 
     validation {
-        condition     = var.system_node_pool.min_count >= 2
-        error_message = "System pool must have at least 2 nodes for HA."
+        condition     = var.system_node_pool.min_count >= 1
+        error_message = "System pool must have at least 2 nodes for HA in prod."
     }
 }
 
@@ -176,9 +176,9 @@ variable "user_node_pools" {
     }))
     default = {
         user = {
-        vm_size   = "Standard_D8s_v5"
-        min_count = 3
-        max_count = 20
+        vm_size   = "Standard_D4s_v5"
+        min_count = 1
+        max_count = 2
         }
     }
 }
