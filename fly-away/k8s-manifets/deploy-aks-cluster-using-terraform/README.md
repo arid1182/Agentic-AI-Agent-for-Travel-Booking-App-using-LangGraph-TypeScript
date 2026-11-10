@@ -7,7 +7,7 @@ Three-layer module layout: **network** -> **monitoring** -> **aks** (+ optional 
 ```
 .
 ├── versions.tf / providers.tf / main.tf / variables.tf / outputs.tf / locals.tf
-├── terraform.tfvars.example
+├── terraform.tfvars
 └── modules/
     ├── network/    # VNet, node + API-server subnets, NSG, UDR via firewall
     ├── aks/        # cluster, node pools, etcd KMS, KV CSI, Defender, locks, diagnostics
@@ -50,7 +50,7 @@ Three-layer module layout: **network** -> **monitoring** -> **aks** (+ optional 
 ## Usage
 
 ```bash
-terraform.tfvars   # fill in
+terraform.tfvars   # fill out
 terraform init
 terraform plan -out=tfplan
 terraform apply tfplan
