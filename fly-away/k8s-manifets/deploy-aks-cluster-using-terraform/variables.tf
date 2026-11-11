@@ -46,6 +46,13 @@ variable "location" {
     }
 }
 
+variable "resource_group_name" {
+    description = "Azure Resource Group"
+    type = string
+    default = "rg-prod-flyaway"
+
+}
+
 variable "admin_group_object_ids" {
     description = "Entra group object IDs granted cluster-admin via Azure RBAC. Required."
     type        = list(string)
