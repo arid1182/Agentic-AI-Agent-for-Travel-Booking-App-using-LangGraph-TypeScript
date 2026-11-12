@@ -154,6 +154,10 @@ resource "azurerm_kubernetes_cluster" "main" {
         scale_down_utilization_threshold = 0.5
         skip_nodes_with_local_storage    = false
         skip_nodes_with_system_pods      = true
+        }
+        node_provisioning_profile {
+        mode               = "Auto"
+        default_node_pools = "Auto" # Creates default Karpenter pools automatically
     }
 
     # --- System node pool ---
