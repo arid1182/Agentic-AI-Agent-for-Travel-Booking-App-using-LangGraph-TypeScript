@@ -4,7 +4,7 @@ terraform {
     required_providers {
         azurearm = {
             source = "hashicorp/azurearm"
-            version = "~> 4.14"
+            version = "~> 4.60"
         }
 
         random = {
