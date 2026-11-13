@@ -76,4 +76,3 @@ kubeconfig*
 # General
 .DS_Store
 *.log
-.envvpc-manifest-terraform/argocd-linux-amd64
