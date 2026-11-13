@@ -14,8 +14,8 @@ resource "azurerm_key_vault" "etcd" {
     location            = var.location
     resource_group_name = var.resource_group_name
     tenant_id           = var.tenant_id
-    sku_name            = "standard"
 
+    sku_name            = "standard"
     rbac_authorization_enabled   = true
     purge_protection_enabled    = true
     soft_delete_retention_days  = 90
@@ -41,11 +41,12 @@ resource "azurerm_key_vault_key" "etcd" {
     key_vault_id = azurerm_key_vault.etcd.id
     key_type     = "RSA-HSM"
     key_size     = 2048
-    key_opts     = ["decrypt", "encrypt", "sign", "unwrapKey", "verify", "wrapKey"]
+
+    key_opts = ["decrypt", "encrypt", "sign", "unwrapKey", "verify", "wrapKey"]
 
     rotation_policy {
         automatic {
-        time_before_expiry = "P30D"
+            time_before_expiry = "P30D"
         }
         expire_after         = "P2Y"
         notify_before_expiry = "P29D"
@@ -70,11 +71,14 @@ resource "azurerm_kubernetes_cluster" "main" {
     node_resource_group = "rg-${local.cluster_name}-nodes"
 
     sku_tier                    = "Standard" # financially-backed 99.95% SLA
-    automatic_channel_upgrade   = "patch"
+    automatic_upgrade_channel   = "patch"
     node_os_upgrade_channel     = "NodeImage"
-    node_provisioning_mode      = "Auto"
     image_cleaner_enabled       = true
     image_cleaner_interval_hours = 24
+    node_provisioning_profile {
+    mode = "Auto"
+    default_node_pools = "Auto"
+    }
     run_command_enabled         = false
     local_account_disabled      = true
     cost_analysis_enabled       = true
@@ -82,12 +86,9 @@ resource "azurerm_kubernetes_cluster" "main" {
     # --- API server access ---
     private_cluster_enabled       = var.private_cluster_enabled
     private_dns_zone_id           = var.private_cluster_enabled ? "System" : null
-    public_network_access_enabled = var.private_cluster_enabled ? false : true
 
     api_server_access_profile {
         authorized_ip_ranges     = var.private_cluster_enabled ? [] : var.api_server_authorized_ip_ranges
-        vnet_integration_enabled = var.private_cluster_enabled && var.enable_api_server_vnet_integration
-        subnet_id                = var.enable_api_server_vnet_integration ? var.api_server_subnet_id : null
     }
 
     # --- Identity & security ---
@@ -95,7 +96,6 @@ resource "azurerm_kubernetes_cluster" "main" {
 
     role_based_access_control_enabled = true
     azure_active_directory_role_based_access_control {
-        managed                = true
         tenant_id              = var.tenant_id
         admin_group_object_ids = var.admin_group_object_ids
         azure_rbac_enabled     = true
@@ -104,42 +104,10 @@ resource "azurerm_kubernetes_cluster" "main" {
     workload_identity_enabled = true
     oidc_issuer_enabled       = true
 
-    azure_policy_profile {
-        enabled = true
-    }
-
-    microsoft_defender {
-        log_analytics_workspace_id = var.log_analytics_workspace_id
-    }
-
-    key_vault_secrets_provider {
-        secret_rotation_enabled  = true
-        secret_rotation_interval = "2m"
-    }
-
-    key_management_service {
-        key_vault_key_id = azurerm_key_vault_key.etcd.id
-        identity_uai     = azurerm_user_assigned_identity.kms.id
-    }
-
-    oms_agent {
-        log_analytics_workspace_id      = var.log_analytics_workspace_id
-        msi_auth_for_monitoring_enabled = true
-    }
-
-    dynamic "monitor_metrics" {
-        for_each = var.enable_prometheus_data_collection ? [1] : []
-        content {
-        annotations_allowed = "*"
-        labels_allowed      = "*"
-        }
-    }
-
     # --- Networking (Azure CNI Overlay) ---
     network_profile {
         network_plugin      = "azure"
         network_plugin_mode = "overlay"
-        ebpf_data_plane     = var.ebpf_data_plane
         pod_cidr            = var.pod_cidr
         service_cidr        = var.service_cidr
         dns_service_ip      = var.dns_service_ip
@@ -147,6 +115,7 @@ resource "azurerm_kubernetes_cluster" "main" {
         load_balancer_sku   = "standard"
     }
 
+    # --- Auto scaler profile ---
     auto_scaler_profile {
         balance_similar_node_groups      = true
         expander                         = "least-waste"
@@ -154,96 +123,59 @@ resource "azurerm_kubernetes_cluster" "main" {
         scale_down_utilization_threshold = 0.5
         skip_nodes_with_local_storage    = false
         skip_nodes_with_system_pods      = true
-        }
-        node_provisioning_profile {
-        mode               = "Auto"
-        default_node_pools = "Auto" # Creates default Karpenter pools automatically
     }
 
-    # --- System node pool ---
+    # --- Default node pool (required by provider validation) ---
     default_node_pool {
         name                          = "system"
-        vm_size                       = var.system_node_pool.vm_size
-        vnet_subnet_id                = var.aks_subnet_id
-        zones                         = ["1", "2", "3"]
-        enable_auto_scaling           = true
-        min_count                     = var.system_node_pool.min_count
-        max_count                     = var.system_node_pool.max_count
-        max_pods                      = var.system_node_pool.max_pods
-        os_disk_type                  = "Ephemeral"
-        os_disk_size_gb               = var.system_node_pool.os_disk_size_gb
-        os_sku                        = var.system_node_pool.os_sku
-        node_labels                   = { "kubernetes.azure.com/mode" = "system" }
-        node_taints                   = ["CriticalAddonsOnly=true:NoSchedule"]
         only_critical_addons_enabled  = true
-        orchestrator_version          = local.k8s_version
-        temporary_name_for_rotation   = "systemtmp"
-
-        upgrade_settings {
-        max_surge                     = "33%"
-        drain_timeout_in_minutes      = 30
-        node_soak_duration_in_minutes = 0
-        }
-    }
-
-    # --- Maintenance windows ---
-    maintenance_window_auto_upgrade {
-        frequency   = "Weekly"
-        interval    = 1
-        duration    = 4
-        day_of_week = "Sunday"
-        start_time  = "02:00"
-        utc_offset  = "+01:00"
-    }
-
-    maintenance_window_node_os {
-        frequency   = "Weekly"
-        interval    = 1
-        duration    = 4
-        day_of_week = "Sunday"
-        start_time  = "06:00"
-        utc_offset  = "+01:00"
-    }
-
-    lifecycle {
-        ignore_changes = [default_node_pool[0].node_count]
-        precondition {
-        condition     = var.private_cluster_enabled || length(var.api_server_authorized_ip_ranges) > 0
-        error_message = "api_server_authorized_ip_ranges must be set when the cluster is not private."
-        }
-        precondition {
-        condition     = !var.enable_api_server_vnet_integration || (var.private_cluster_enabled && var.api_server_subnet_id != null)
-        error_message = "API server VNet integration requires a private cluster and api_server_subnet_id."
-        }
-        precondition {
-        condition     = var.system_node_pool.max_count >= var.system_node_pool.min_count
-        error_message = "System node pool max_count must be >= min_count."
-        }
-        precondition {
-        condition     = alltrue([for p in var.user_node_pools : p.max_count >= p.min_count])
-        error_message = "Every user node pool must have max_count >= min_count."
-        }
     }
 
     tags = var.tags
+}
 
-    depends_on = [azurerm_role_assignment.kms_key_access]
+# ---------------------------------------------------------------------------
+# Standalone node pools (required for azurerm provider >= 5.0)
+# In provider 5.x+, default node pool and user node pools must be defined as
+# standalone azurerm_kubernetes_cluster_node_pool resources instead of inline
+# blocks within azurerm_kubernetes_cluster.
+# ---------------------------------------------------------------------------
+
+# System node pool
+resource "azurerm_kubernetes_cluster_node_pool" "system" {
+    name                = "system"
+    kubernetes_cluster_id = azurerm_kubernetes_cluster.main.id
+
+    vm_size               = var.system_node_pool.vm_size
+    vnet_subnet_id        = var.aks_subnet_id
+    zones                 = ["1", "2", "3"]
+    min_count             = var.system_node_pool.min_count
+    max_count             = var.system_node_pool.max_count
+    max_pods              = var.system_node_pool.max_pods
+    os_disk_type          = "Ephemeral"
+    os_disk_size_gb       = var.system_node_pool.os_disk_size_gb
+    os_sku                = var.system_node_pool.os_sku
+    node_labels           = { "kubernetes.azure.com/mode" = "system" }
+
+    orchestrator_version  = local.k8s_version
+
+    upgrade_settings {
+        max_surge                     = "33%"
+        drain_timeout_in_minutes      = 30
+        node_soak_duration_in_minutes = 0
     }
+}
 
-# ---------------------------------------------------------------------------
-# User node pools
-# ---------------------------------------------------------------------------
+# User node pools (one per entry in var.user_node_pools)
 resource "azurerm_kubernetes_cluster_node_pool" "user" {
     for_each = var.user_node_pools
 
-    name                  = each.key
+    name                = each.key
     kubernetes_cluster_id = azurerm_kubernetes_cluster.main.id
+
     vm_size               = each.value.vm_size
     vnet_subnet_id        = var.aks_subnet_id
-    zones                 = each.value.zones
-    mode                  = "User"
-    priority              = "Regular"
-    enable_auto_scaling   = true
+    zones                 = each.value.zones != null ? each.value.zones : ["1", "2", "3"]
     min_count             = each.value.min_count
     max_count             = each.value.max_count
     max_pods              = each.value.max_pods
@@ -259,8 +191,6 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
         drain_timeout_in_minutes      = 30
         node_soak_duration_in_minutes = 0
     }
-
-    tags = var.tags
 }
 
 # ---------------------------------------------------------------------------

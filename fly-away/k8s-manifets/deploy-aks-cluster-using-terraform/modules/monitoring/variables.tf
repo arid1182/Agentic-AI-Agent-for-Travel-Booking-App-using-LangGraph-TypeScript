@@ -3,7 +3,7 @@ variable "location" { type = string }
 variable "resource_group_name" { type = string }
 variable "retention_days" { 
     type = number
-    default = 7 # 30 min for production, 7 days for dev/test 
+    default = 30 # 90 min for production, 30 days for dev/test 
     }
 variable "enable_prometheus" { 
     type = bool

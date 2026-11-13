@@ -2,9 +2,9 @@ terraform {
     required_version = ">= 1.6.0"
 
     required_providers {
-        azurearm = {
-            source = "hashicorp/azurearm"
-            version = "~> 4.60"
+        azurerm = {
+            source = "hashicorp/azurerm"
+            version = "~> 5.13.0"
         }
 
         random = {
@@ -16,10 +16,10 @@ terraform {
     # Remote tfstate file
     backend "azurerm" {
         resource_group_name = "rg-prod-flyaway"
-        storage_account_name = "tfsate-prod-flyaway"
+        storage_account_name = "tfsateprodflyaway"
         container_name = "flyaway-cluster-manager"
         key = "flyaway-prod.tfstate"
-        use_oid = true
+        use_oidc = true
         use_azuread_auth = true
     }
 }

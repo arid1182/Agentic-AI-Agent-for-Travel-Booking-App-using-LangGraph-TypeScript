@@ -34,3 +34,46 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+**/.terraform/
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+*.tfplan
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Terraform provider binaries / plugin cache
+.terraform.lock.hcl
+**/.terraform.d/
+**/terraform-provider-*
+
+# EKS / kubeconfig
+kubeconfig*
+*.kubeconfig
+.kube/
+
+# AWS
+.aws/
+*.pem
+
+# General
+.DS_Store
+*.log
+.envvpc-manifest-terraform/argocd-linux-amd64

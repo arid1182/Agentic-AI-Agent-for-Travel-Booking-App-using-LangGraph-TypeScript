@@ -41,7 +41,7 @@ variable "location" {
     type        = map(string)
     default     = {
         name        = "fly-away"
-        environment = var.environment
+        environment = "prod"
         owner       = "capclouds.com"
     }
 }
@@ -67,7 +67,7 @@ variable "admin_group_object_ids" {
 variable "vnet_address_space" {
     description = "Address space of the hub/spoke VNet hosting AKS."
     type        = list(string)
-    default     = ["10.100.0.0/16"]
+    default     = ["10.100.0.0/15"]
 
     validation {
         condition     = length(var.vnet_address_space) == 1
