@@ -2,7 +2,15 @@ variable "name_prefix" { type = string }
 variable "location" { type = string }
 variable "resource_group_name" { type = string }
 variable "tenant_id" { type = string }
-variable "aks_subnet_id" { type = string }
+variable "aks_subnet_id" {
+    description = "Resource ID of the VNet subnet the AKS node pools join."
+    type        = string
+
+    validation {
+        condition     = var.aks_subnet_id != ""
+        error_message = "aks_subnet_id must not be empty. Pass module.network.aks_subnet_id from the network module."
+    }
+}
 variable "api_server_subnet_id" { 
     type = string
     default = null 

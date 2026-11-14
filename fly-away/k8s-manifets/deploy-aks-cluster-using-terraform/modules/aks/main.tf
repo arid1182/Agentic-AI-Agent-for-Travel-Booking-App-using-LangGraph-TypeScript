@@ -55,7 +55,7 @@ resource "azurerm_key_vault_key" "etcd" {
 
 resource "azurerm_role_assignment" "kms_key_access" {
     scope                = azurerm_key_vault.etcd.id
-    role_definition_name = "Key Vault Crypto User"
+    role_definition_name = "Key Vault Crypto Officer"
     principal_id         = azurerm_user_assigned_identity.kms.principal_id
 }
 
@@ -128,7 +128,19 @@ resource "azurerm_kubernetes_cluster" "main" {
     # --- Default node pool (required by provider validation) ---
     default_node_pool {
         name                          = "system"
+        vm_size                       = var.system_node_pool.vm_size
+        vnet_subnet_id                = var.aks_subnet_id
+        zones                         = ["1", "2", "3"]
+        min_count                     = var.system_node_pool.min_count
+        max_count                     = var.system_node_pool.max_count
+        os_disk_type                  = "Ephemeral"
         only_critical_addons_enabled  = true
+
+        upgrade_settings {
+            max_surge                     = "33%"
+            drain_timeout_in_minutes      = 30
+            node_soak_duration_in_minutes = 0
+        }
     }
 
     tags = var.tags
@@ -140,31 +152,6 @@ resource "azurerm_kubernetes_cluster" "main" {
 # standalone azurerm_kubernetes_cluster_node_pool resources instead of inline
 # blocks within azurerm_kubernetes_cluster.
 # ---------------------------------------------------------------------------
-
-# System node pool
-resource "azurerm_kubernetes_cluster_node_pool" "system" {
-    name                  = "system"
-    kubernetes_cluster_id = azurerm_kubernetes_cluster.main.id
-
-    vm_size               = var.system_node_pool.vm_size
-    vnet_subnet_id        = var.aks_subnet_id
-    zones                 = ["1", "2", "3"]
-    min_count             = var.system_node_pool.min_count
-    max_count             = var.system_node_pool.max_count
-    max_pods              = var.system_node_pool.max_pods
-    os_disk_type          = "Ephemeral"
-    os_disk_size_gb       = var.system_node_pool.os_disk_size_gb
-    os_sku                = var.system_node_pool.os_sku
-    node_labels           = { "kubernetes.azure.com/mode" = "system" }
-
-    orchestrator_version  = local.k8s_version
-
-    upgrade_settings {
-        max_surge                     = "33%"
-        drain_timeout_in_minutes      = 30
-        node_soak_duration_in_minutes = 0
-    }
-}
 
 # User node pools (one per entry in var.user_node_pools)
 resource "azurerm_kubernetes_cluster_node_pool" "user" {
