@@ -186,6 +186,7 @@ variable "user_node_pools" {
         vm_size   = "Standard_D4s_v5"
         min_count = 1
         max_count = 2
+        zones     = ["1", "2", "3"]
         }
     }
 }

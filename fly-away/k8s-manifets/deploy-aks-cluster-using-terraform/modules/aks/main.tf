@@ -76,8 +76,8 @@ resource "azurerm_kubernetes_cluster" "main" {
     image_cleaner_enabled       = true
     image_cleaner_interval_hours = 24
     node_provisioning_profile {
-    mode = "Auto"
-    default_node_pools = "Auto"
+        mode = "Auto"
+        default_node_pools = "Auto"
     }
     run_command_enabled         = false
     local_account_disabled      = true
@@ -143,7 +143,7 @@ resource "azurerm_kubernetes_cluster" "main" {
 
 # System node pool
 resource "azurerm_kubernetes_cluster_node_pool" "system" {
-    name                = "system"
+    name                  = "system"
     kubernetes_cluster_id = azurerm_kubernetes_cluster.main.id
 
     vm_size               = var.system_node_pool.vm_size
@@ -170,7 +170,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "system" {
 resource "azurerm_kubernetes_cluster_node_pool" "user" {
     for_each = var.user_node_pools
 
-    name                = each.key
+    name                  = each.key
     kubernetes_cluster_id = azurerm_kubernetes_cluster.main.id
 
     vm_size               = each.value.vm_size

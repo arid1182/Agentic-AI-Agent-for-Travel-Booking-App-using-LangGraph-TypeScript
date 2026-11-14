@@ -6,8 +6,42 @@ vnet_address_space = ["10.100.0.0/15"]
 environment = "prod"
 prefix = "flyaway"
 location = "eastus"
+enable_managed_prometheus = false
+log_retention_days = "30"
+kubernetes_version = "1.35"
+create_acr = false
+private_cluster_enabled = false
+enable_api_server_vnet_integration = false # true if "private_cluster_enabled" is set
+api_server_authorized_ip_ranges = [] # only used if private_cluster_enabled = false
+
+firewall_private_ip = "10.0.0.4"   # set "" for plain loadbalancer outbound
+outbound_type = "userDefinedRouting"
 tags = {
-    name        = "fly-away"
-    environment = "prod"
-    owner       = "capclouds.com"
+    name        = "Flyaway"
+    environment = "Prod"
+    owner       = "Capclouds.com"
+}
+
+# stand alone kubernetes cluster management 
+
+user_node_pools = {
+    apps = {
+        vm_size   = "Standard_B2s"
+        min_count = 2
+        max_count = 2
+        node_labels = { workload = "apps" }
+        os_disk_size_gb = 30
+        zones     = ["1"]
+    }
+}
+
+
+system_node_pool = {
+    api = {
+        vm_size   = "Standard_B2s"
+        min_count = 1
+        max_count = 2
+        node_labels = { workload = "api" }
+        os_disk_size_gb = 30
+    }
 }

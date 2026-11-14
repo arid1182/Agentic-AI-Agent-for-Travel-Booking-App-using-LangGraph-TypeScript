@@ -84,7 +84,6 @@ resource "azurerm_route_table" "main" {
 
 resource "azurerm_route" "default_via_firewall" {
     count = var.firewall_private_ip != null ? 1 : 0
-
     name                   = "default-via-firewall"
     resource_group_name    = var.resource_group_name
     route_table_name       = azurerm_route_table.main[0].name
@@ -95,7 +94,6 @@ resource "azurerm_route" "default_via_firewall" {
 
 resource "azurerm_subnet_route_table_association" "aks" {
     count = var.firewall_private_ip != null ? 1 : 0
-
     subnet_id      = azurerm_subnet.aks.id
     route_table_id = azurerm_route_table.main[0].id
 }

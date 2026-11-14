@@ -10,7 +10,6 @@ resource "azurerm_log_analytics_workspace" "main" {
 
 resource "azurerm_monitor_workspace" "prom" {
     count = var.enable_prometheus ? 1 : 0
-
     name                = "amw-${var.name_prefix}-aks"
     resource_group_name = var.resource_group_name
     location            = var.location
