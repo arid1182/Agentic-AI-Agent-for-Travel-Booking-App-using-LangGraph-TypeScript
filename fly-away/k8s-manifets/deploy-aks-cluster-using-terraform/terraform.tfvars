@@ -12,7 +12,8 @@ kubernetes_version = "1.35"
 create_acr = false
 private_cluster_enabled = false
 enable_api_server_vnet_integration = false # true if "private_cluster_enabled" is set
-api_server_authorized_ip_ranges = [] # only used if private_cluster_enabled = false
+api_server_authorized_ip_ranges = ["154.57.209.206/32"] # only used if private_cluster_enabled = false
+key_vault_allowed_ips = ["154.57.209.206/32"]
 
 firewall_private_ip = "10.0.0.4"   # set "" for plain loadbalancer outbound
 outbound_type = "userDefinedRouting"

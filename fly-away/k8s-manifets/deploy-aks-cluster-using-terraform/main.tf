@@ -52,6 +52,7 @@ module "aks" {
     private_cluster_enabled            = var.private_cluster_enabled
     enable_api_server_vnet_integration = var.enable_api_server_vnet_integration
     api_server_authorized_ip_ranges    = var.api_server_authorized_ip_ranges
+    key_vault_allowed_ips              = var.key_vault_allowed_ips
 
     admin_group_object_ids = var.admin_group_object_ids
     log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id

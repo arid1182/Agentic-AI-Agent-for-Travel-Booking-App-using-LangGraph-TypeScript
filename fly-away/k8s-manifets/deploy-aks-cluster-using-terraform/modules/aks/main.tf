@@ -1,3 +1,20 @@
+data "azurerm_client_config" "current" {
+}
+output "account_id" {
+    value = data.azurerm_client_config.current.client_id
+}
+
+data "azurerm_kubernetes_service_versions" "current" {
+    location = var.location
+    version_prefix = var.kubernetes_version != null ? var.kubernetes_version : ""
+    include_preview = false
+}
+
+locals {
+    cluster_name = "aks-${var.name_prefix}"
+    k8s_version = var.kubernetes_version != null ? var.kubernetes_version : data.azurerm_kubernetes_service_versions.current.latest_version
+}
+
 # ---------------------------------------------------------------------------
 # Key Vault + key for etcd (KMSv2) encryption at rest
 # ---------------------------------------------------------------------------
@@ -15,7 +32,7 @@ resource "azurerm_key_vault" "etcd" {
     resource_group_name = var.resource_group_name
     tenant_id           = var.tenant_id
 
-    sku_name            = "standard"
+    sku_name            = "premium"
     rbac_authorization_enabled   = true
     purge_protection_enabled    = true
     soft_delete_retention_days  = 90
@@ -24,6 +41,7 @@ resource "azurerm_key_vault" "etcd" {
     network_acls {
         default_action = "Deny"
         bypass         = "AzureServices"
+        ip_rules       = var.key_vault_allowed_ips
     }
 
     tags = var.tags
@@ -34,6 +52,12 @@ resource "azurerm_user_assigned_identity" "kms" {
     location            = var.location
     resource_group_name = var.resource_group_name
     tags                = var.tags
+}
+
+resource "azurerm_role_assignment" "kms_key_access" {
+    scope                = azurerm_key_vault.etcd.id
+    role_definition_name = "Key Vault Crypto Officer"
+    principal_id         = data.azurerm_client_config.current.object_id
 }
 
 resource "azurerm_key_vault_key" "etcd" {
@@ -51,12 +75,7 @@ resource "azurerm_key_vault_key" "etcd" {
         expire_after         = "P2Y"
         notify_before_expiry = "P29D"
     }
-}
-
-resource "azurerm_role_assignment" "kms_key_access" {
-    scope                = azurerm_key_vault.etcd.id
-    role_definition_name = "Key Vault Crypto Officer"
-    principal_id         = azurerm_user_assigned_identity.kms.principal_id
+    depends_on = [ azurerm_role_assignment.kms_key_access ]
 }
 
 # ---------------------------------------------------------------------------
@@ -131,8 +150,7 @@ resource "azurerm_kubernetes_cluster" "main" {
         vm_size                       = var.system_node_pool.vm_size
         vnet_subnet_id                = var.aks_subnet_id
         zones                         = ["1", "2", "3"]
-        min_count                     = var.system_node_pool.min_count
-        max_count                     = var.system_node_pool.max_count
+        node_count                    = 2
         os_disk_type                  = "Ephemeral"
         only_critical_addons_enabled  = true
 

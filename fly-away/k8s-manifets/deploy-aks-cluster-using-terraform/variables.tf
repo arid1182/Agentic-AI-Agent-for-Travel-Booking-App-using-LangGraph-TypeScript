@@ -99,6 +99,12 @@ variable "api_server_authorized_ip_ranges" {
     default     = []
 }
 
+variable "key_vault_allowed_ips" {
+    description = "Public IP addresses allowed to access Key Vault."
+    type        = list(string)
+    default     = []
+}
+
 variable "outbound_type" {
     description = "Outbound networking: loadBalancer or userDefinedRouting (firewall)."
     type        = string

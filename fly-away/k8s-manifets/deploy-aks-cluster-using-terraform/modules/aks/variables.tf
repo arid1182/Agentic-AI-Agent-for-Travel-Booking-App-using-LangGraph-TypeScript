@@ -42,6 +42,11 @@ variable "api_server_authorized_ip_ranges" {
     type = list(string)
     default = [] 
     }
+variable "key_vault_allowed_ips" {
+    description = "Public IP addresses allowed to access Key Vault."
+    type        = list(string)
+    default     = []
+}
 variable "admin_group_object_ids" { type = list(string) }
 variable "log_analytics_workspace_id" { type = string }
 variable "enable_prometheus_data_collection" { 
